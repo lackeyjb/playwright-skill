@@ -44,7 +44,7 @@ Install directly from GitHub using Claude Code's plugin marketplace system:
 ```
 
 After installation:
-- Navigate to the plugin directory: `cd ~/.claude/plugins/playwright-skill`
+- Navigate to the skill directory: `cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
 - Run setup: `npm run setup`
 - Verify: Run `/help` to see the skill is available
 
@@ -69,8 +69,8 @@ cd ~/.claude/skills
 # Clone the skill
 git clone https://github.com/lackeyjb/playwright-skill.git
 
-# Navigate into the skill directory
-cd playwright-skill
+# Navigate into the skill directory (note the nested structure)
+cd playwright-skill/skills/playwright-skill
 
 # Install dependencies and Chromium browser
 npm run setup
@@ -83,7 +83,7 @@ cd /path/to/your/project
 mkdir -p .claude/skills
 cd .claude/skills
 git clone https://github.com/lackeyjb/playwright-skill.git
-cd playwright-skill
+cd playwright-skill/skills/playwright-skill
 npm run setup
 ```
 
@@ -93,7 +93,11 @@ npm run setup
 2. Extract to:
    - Global: `~/.claude/skills/playwright-skill`
    - Project: `/path/to/your/project/.claude/skills/playwright-skill`
-3. Navigate to the directory and run `npm run setup`
+3. Navigate to the skill directory and run setup:
+   ```bash
+   cd playwright-skill/skills/playwright-skill
+   npm run setup
+   ```
 
 ### Verify Installation
 
@@ -176,15 +180,19 @@ The skill uses sensible defaults:
 ```
 playwright-skill/
 ├── .claude-plugin/
-│   └── plugin.json      # Plugin metadata for distribution
-├── SKILL.md             # What Claude reads (314 lines)
-├── API_REFERENCE.md     # Full Playwright API reference (630 lines)
-├── README.md            # This file - user documentation
-├── run.js               # Universal executor (proper module resolution)
-├── package.json         # Dependencies & setup scripts
-├── LICENSE              # MIT License
-└── lib/
-    └── helpers.js       # Optional utility functions
+│   ├── plugin.json          # Plugin metadata for distribution
+│   └── marketplace.json     # Marketplace configuration
+├── skills/
+│   └── playwright-skill/    # The actual skill (Claude discovers this)
+│       ├── SKILL.md         # What Claude reads (314 lines)
+│       ├── run.js           # Universal executor (proper module resolution)
+│       ├── package.json     # Dependencies & setup scripts
+│       └── lib/
+│           └── helpers.js   # Optional utility functions
+├── API_REFERENCE.md         # Full Playwright API reference (630 lines)
+├── README.md                # This file - user documentation
+├── CONTRIBUTING.md          # Contribution guidelines
+└── LICENSE                  # MIT License
 ```
 
 ## Advanced Usage
@@ -208,7 +216,12 @@ For comprehensive Playwright API documentation, Claude will automatically load `
 
 **Playwright not installed?**
 ```bash
-cd ~/.claude/skills/playwright-skill
+# For manual installations
+cd ~/.claude/skills/playwright-skill/skills/playwright-skill
+npm run setup
+
+# For plugin installations
+cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 npm run setup
 ```
 
@@ -220,6 +233,7 @@ Check that `headless: false` is set in the automation code. The skill defaults t
 
 **Need to install all browsers?**
 ```bash
+# Navigate to the skill directory first, then:
 npm run install-all-browsers
 ```
 
