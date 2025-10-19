@@ -33,14 +33,14 @@ This skill can be installed via the Claude Code plugin system or manually. Learn
 
 ### Option 1: Via Plugin System (Recommended)
 
-**Once this plugin is added to a marketplace**, you can install it using Claude Code's built-in plugin commands:
+Install directly from GitHub using Claude Code's plugin marketplace system:
 
 ```bash
-# Browse and install interactively
-/plugin
+# Add this repository as a marketplace
+/plugin marketplace add lackeyjb/playwright-skill
 
-# Or install directly (replace 'marketplace-name' with the actual marketplace)
-/plugin install playwright-skill@marketplace-name
+# Install the plugin
+/plugin install playwright-skill@playwright-skill
 ```
 
 After installation:
@@ -48,7 +48,14 @@ After installation:
 - Run setup: `npm run setup`
 - Verify: Run `/help` to see the skill is available
 
-**Note:** This plugin is not yet in an official marketplace. Use the manual installation method below until then.
+**Alternative - Browse interactively:**
+```bash
+# Add the marketplace first
+/plugin marketplace add lackeyjb/playwright-skill
+
+# Then browse and install
+/plugin
+```
 
 ### Option 2: Manual Git Clone
 
@@ -87,24 +94,6 @@ npm run setup
    - Global: `~/.claude/skills/playwright-skill`
    - Project: `/path/to/your/project/.claude/skills/playwright-skill`
 3. Navigate to the directory and run `npm run setup`
-
-### Managing the Plugin
-
-Once installed via the plugin system, you can manage it using these commands:
-
-```bash
-# View installed plugins and their status
-/plugin
-
-# Disable the plugin temporarily (without uninstalling)
-/plugin disable playwright-skill@marketplace-name
-
-# Re-enable a disabled plugin
-/plugin enable playwright-skill@marketplace-name
-
-# Completely remove the plugin
-/plugin uninstall playwright-skill@marketplace-name
-```
 
 ### Verify Installation
 
