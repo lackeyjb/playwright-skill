@@ -1,0 +1,33 @@
+{
+  "name": "playwright-skill",
+  "displayName": "Playwright Browser Automation",
+  "version": "3.0.0",
+  "description": "General-purpose browser automation with Playwright. Test pages, automate interactions, validate UX - any browser task on-the-fly with visible browser by default.",
+  "author": "lackeyjb",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lackeyjb/playwright-skill"
+  },
+  "keywords": [
+    "playwright",
+    "browser-automation",
+    "testing",
+    "e2e",
+    "web-testing",
+    "automation"
+  ],
+  "skills": [
+    {
+      "name": "playwright-skill",
+      "path": ".",
+      "description": "Complete browser automation with Playwright"
+    }
+  ],
+  "dependencies": {
+    "playwright": "^1.48.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

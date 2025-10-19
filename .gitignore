@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.npm/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+.temp-*
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test results
+test-results/
+playwright-report/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# Environment
+.env
+.env.local
