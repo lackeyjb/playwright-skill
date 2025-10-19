@@ -1,6 +1,6 @@
 {
   "name": "playwright-skill",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Claude Code Skill for general-purpose browser automation with Playwright. Claude autonomously writes and executes custom automation for testing pages, validating UX, and any browser task.",
   "author": {
     "name": "lackeyjb"
