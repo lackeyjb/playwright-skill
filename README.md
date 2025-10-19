@@ -1,8 +1,10 @@
-# Playwright Skill - Claude Code Plugin
+# Playwright Skill for Claude Code
 
-**General-purpose browser automation for Claude Code**
+**General-purpose browser automation as a Claude Code Skill**
 
-This plugin enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Like playwright-mcp, but as a Claude Code Skill with progressive disclosure for optimal context usage.
+A [Claude Code Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
+
+Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
 
 ## Features
 
@@ -13,15 +15,31 @@ This plugin enables Claude to write and execute any Playwright automation on-the
 - ✅ **Safe Cleanup** - Smart temp file management without race conditions
 - ✅ **Comprehensive Helpers** - Optional utility functions for common tasks
 
+## What is a Claude Code Skill?
+
+[Skills](https://www.anthropic.com/news/skills) are modular capabilities that extend Claude's functionality. Unlike slash commands that you invoke manually, Skills are **model-invoked**—Claude autonomously decides when to use them based on your request.
+
+When you ask Claude to test a webpage or automate browser interactions, Claude:
+1. **Discovers** this skill by scanning its description
+2. **Loads** only the SKILL.md instructions needed for your specific task
+3. **Executes** custom Playwright code tailored to your request
+4. **Returns** results with screenshots and console output
+
+Skills are composable and portable—build once, use across Claude apps, Claude Code, and the API.
+
 ## Installation
 
-### Option 1: Install from GitHub (Recommended)
+This skill can be installed globally (available across all projects) or per-project. Learn more about [Claude Code Skills](https://docs.claude.com/en/docs/claude-code/skills).
+
+### Global Installation (Recommended)
+
+Install to your Claude skills directory to make it available everywhere:
 
 ```bash
 # Navigate to your Claude skills directory
 cd ~/.claude/skills
 
-# Clone the plugin
+# Clone the skill
 git clone https://github.com/lackeyjb/playwright-skill.git
 
 # Navigate into the skill directory
@@ -31,13 +49,9 @@ cd playwright-skill
 npm run setup
 ```
 
-### Option 2: Manual Installation
+### Project-Specific Installation
 
-1. Download the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
-2. Extract to `~/.claude/skills/playwright-skill`
-3. Run `npm run setup` inside the directory
-
-### Option 3: Project-Specific Installation
+Install to a specific project's `.claude/skills` directory:
 
 ```bash
 # Install in a specific project
@@ -48,6 +62,12 @@ git clone https://github.com/lackeyjb/playwright-skill.git
 cd playwright-skill
 npm run setup
 ```
+
+### Manual Installation
+
+1. Download the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
+2. Extract to `~/.claude/skills/playwright-skill` (or `.claude/skills/playwright-skill` in your project)
+3. Run `npm run setup` inside the directory
 
 ## Quick Start
 
@@ -121,19 +141,21 @@ The skill uses sensible defaults:
 
 ```
 playwright-skill/
-├── SKILL.md          # Concise execution patterns (314 lines)
-├── README.md         # Full Playwright API reference (630 lines)
-├── run.js            # Universal executor (proper module resolution)
-├── package.json      # Dependencies & setup scripts
-├── plugin.json       # Plugin metadata
-├── LICENSE           # MIT License
+├── .claude-plugin/
+│   └── plugin.json      # Plugin metadata for distribution
+├── SKILL.md             # What Claude reads (314 lines)
+├── API_REFERENCE.md     # Full Playwright API reference (630 lines)
+├── README.md            # This file - user documentation
+├── run.js               # Universal executor (proper module resolution)
+├── package.json         # Dependencies & setup scripts
+├── LICENSE              # MIT License
 └── lib/
-    └── helpers.js    # Optional utility functions
+    └── helpers.js       # Optional utility functions
 ```
 
 ## Advanced Usage
 
-For comprehensive Playwright API documentation, Claude will automatically load `README.md` when needed:
+For comprehensive Playwright API documentation, Claude will automatically load `API_REFERENCE.md` when needed:
 - Selectors & Locators best practices
 - Network interception & API mocking
 - Authentication & session management
@@ -179,11 +201,13 @@ Contributions welcome! Please:
 
 MIT License - see [LICENSE](LICENSE) file for details
 
-## Support
+## Learn More
 
+- **Claude Skills**: [Official announcement from Anthropic](https://www.anthropic.com/news/skills)
+- **Claude Code Skills Docs**: [Skills documentation](https://docs.claude.com/en/docs/claude-code/skills)
+- **Claude Code Plugins Docs**: [Plugins documentation](https://docs.claude.com/en/docs/claude-code/plugins)
+- **API Reference**: See [API_REFERENCE.md](API_REFERENCE.md) for full Playwright documentation
 - **Issues**: [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
-- **Documentation**: See [README.md](README.md) for full Playwright API reference
-- **Claude Code Docs**: [https://docs.claude.com/en/docs/claude-code/skills](https://docs.claude.com/en/docs/claude-code/skills)
 
 ## Changelog
 
