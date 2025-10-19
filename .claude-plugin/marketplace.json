@@ -1,0 +1,38 @@
+{
+  "name": "playwright-skill",
+  "owner": {
+    "name": "lackeyjb",
+    "email": "github@lackeyjb"
+  },
+  "metadata": {
+    "description": "Playwright browser automation skill for Claude Code",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "playwright-skill",
+      "source": "./",
+      "description": "Claude Code Skill for general-purpose browser automation with Playwright. Claude autonomously writes and executes custom automation for testing pages, validating UX, and any browser task.",
+      "version": "3.1.0",
+      "author": {
+        "name": "lackeyjb"
+      },
+      "homepage": "https://github.com/lackeyjb/playwright-skill",
+      "repository": "https://github.com/lackeyjb/playwright-skill",
+      "license": "MIT",
+      "keywords": [
+        "claude-skill",
+        "claude-code",
+        "playwright",
+        "browser-automation",
+        "testing",
+        "e2e",
+        "web-testing",
+        "automation",
+        "model-invoked"
+      ],
+      "category": "testing",
+      "tags": ["browser", "automation", "playwright", "testing", "e2e"]
+    }
+  ]
+}
