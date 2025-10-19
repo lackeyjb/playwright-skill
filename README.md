@@ -1,8 +1,8 @@
 # Playwright Skill for Claude Code
 
-**General-purpose browser automation as a Claude Code Skill**
+**General-purpose browser automation as a Claude Skill**
 
-A [Claude Code Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
+A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
 
 Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
 
@@ -15,7 +15,7 @@ Claude autonomously decides when to use this skill based on your browser automat
 - ✅ **Safe Cleanup** - Smart temp file management without race conditions
 - ✅ **Comprehensive Helpers** - Optional utility functions for common tasks
 
-## What is a Claude Code Skill?
+## What is a Claude Skill?
 
 [Skills](https://www.anthropic.com/news/skills) are modular capabilities that extend Claude's functionality. Unlike slash commands that you invoke manually, Skills are **model-invoked**—Claude autonomously decides when to use them based on your request.
 
@@ -29,7 +29,7 @@ Skills are composable and portable—build once, use across Claude apps, Claude 
 
 ## Installation
 
-This skill can be installed globally (available across all projects) or per-project. Learn more about [Claude Code Skills](https://docs.claude.com/en/docs/claude-code/skills).
+This skill can be installed globally (available across all projects) or per-project. Learn more about [Claude Skills](https://docs.claude.com/en/docs/claude-code/skills).
 
 ### Global Installation (Recommended)
 
