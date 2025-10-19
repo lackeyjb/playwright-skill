@@ -29,12 +29,32 @@ Skills are composable and portable—build once, use across Claude apps, Claude 
 
 ## Installation
 
-This skill can be installed globally (available across all projects) or per-project. Learn more about [Claude Skills](https://docs.claude.com/en/docs/claude-code/skills).
+This skill can be installed via the Claude Code plugin system or manually. Learn more about [installing plugins](https://docs.claude.com/en/docs/claude-code/plugins).
 
-### Global Installation (Recommended)
+### Option 1: Via Plugin System (Recommended)
 
-Install to your Claude skills directory to make it available everywhere:
+**Once this plugin is added to a marketplace**, you can install it using Claude Code's built-in plugin commands:
 
+```bash
+# Browse and install interactively
+/plugin
+
+# Or install directly (replace 'marketplace-name' with the actual marketplace)
+/plugin install playwright-skill@marketplace-name
+```
+
+After installation:
+- Navigate to the plugin directory: `cd ~/.claude/plugins/playwright-skill`
+- Run setup: `npm run setup`
+- Verify: Run `/help` to see the skill is available
+
+**Note:** This plugin is not yet in an official marketplace. Use the manual installation method below until then.
+
+### Option 2: Manual Git Clone
+
+Install directly from GitHub to your skills directory:
+
+**Global Installation (Available Everywhere):**
 ```bash
 # Navigate to your Claude skills directory
 cd ~/.claude/skills
@@ -49,10 +69,7 @@ cd playwright-skill
 npm run setup
 ```
 
-### Project-Specific Installation
-
-Install to a specific project's `.claude/skills` directory:
-
+**Project-Specific Installation:**
 ```bash
 # Install in a specific project
 cd /path/to/your/project
@@ -63,11 +80,39 @@ cd playwright-skill
 npm run setup
 ```
 
-### Manual Installation
+### Option 3: Download Release
 
 1. Download the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
-2. Extract to `~/.claude/skills/playwright-skill` (or `.claude/skills/playwright-skill` in your project)
-3. Run `npm run setup` inside the directory
+2. Extract to:
+   - Global: `~/.claude/skills/playwright-skill`
+   - Project: `/path/to/your/project/.claude/skills/playwright-skill`
+3. Navigate to the directory and run `npm run setup`
+
+### Managing the Plugin
+
+Once installed via the plugin system, you can manage it using these commands:
+
+```bash
+# View installed plugins and their status
+/plugin
+
+# Disable the plugin temporarily (without uninstalling)
+/plugin disable playwright-skill@marketplace-name
+
+# Re-enable a disabled plugin
+/plugin enable playwright-skill@marketplace-name
+
+# Completely remove the plugin
+/plugin uninstall playwright-skill@marketplace-name
+```
+
+### Verify Installation
+
+After installation, verify the skill is working:
+
+1. **Check available commands:** Run `/help` to confirm the skill is loaded
+2. **Test the skill:** Ask Claude to perform a simple browser task like "Test if google.com loads"
+3. **Review plugin details:** Use `/plugin` → "Manage Plugins" to see plugin information
 
 ## Quick Start
 
@@ -206,6 +251,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 - **Claude Skills**: [Official announcement from Anthropic](https://www.anthropic.com/news/skills)
 - **Claude Code Skills Docs**: [Skills documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - **Claude Code Plugins Docs**: [Plugins documentation](https://docs.claude.com/en/docs/claude-code/plugins)
+- **Plugin Marketplaces**: [How to create and use marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
 - **API Reference**: See [API_REFERENCE.md](API_REFERENCE.md) for full Playwright documentation
 - **Issues**: [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
 
