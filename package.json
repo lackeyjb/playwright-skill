@@ -1,6 +1,6 @@
 {
   "name": "playwright-skill",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "General-purpose browser automation with Playwright for Claude Code",
   "author": "lackeyjb",
   "main": "run.js",
