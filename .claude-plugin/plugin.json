@@ -17,12 +17,5 @@
     "web-testing",
     "automation",
     "model-invoked"
-  ],
-  "skills": [
-    {
-      "name": "playwright-skill",
-      "path": ".",
-      "description": "Model-invoked browser automation skill. Claude writes and executes custom Playwright code for testing, automation, and validation tasks."
-    }
   ]
 }
