@@ -315,7 +315,7 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
 async function createContext(browser, options = {}) {
   const defaultOptions = {
     viewport: { width: 1280, height: 720 },
-    userAgent: options.mobile 
+    userAgent: options.mobile
       ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1'
       : undefined,
     permissions: options.permissions || [],
@@ -323,8 +323,61 @@ async function createContext(browser, options = {}) {
     locale: options.locale || 'en-US',
     timezoneId: options.timezoneId || 'America/New_York'
   };
-  
+
   return await browser.newContext({ ...defaultOptions, ...options });
+}
+
+/**
+ * Detect running dev servers on common ports
+ * @param {Array<number>} customPorts - Additional ports to check
+ * @returns {Promise<Array>} Array of detected server URLs
+ */
+async function detectDevServers(customPorts = []) {
+  const http = require('http');
+
+  // Common dev server ports
+  const commonPorts = [3000, 3001, 3002, 5173, 8080, 8000, 4200, 5000, 9000, 1234];
+  const allPorts = [...new Set([...commonPorts, ...customPorts])];
+
+  const detectedServers = [];
+
+  console.log('🔍 Checking for running dev servers...');
+
+  for (const port of allPorts) {
+    try {
+      await new Promise((resolve, reject) => {
+        const req = http.request({
+          hostname: 'localhost',
+          port: port,
+          path: '/',
+          method: 'HEAD',
+          timeout: 500
+        }, (res) => {
+          if (res.statusCode < 500) {
+            detectedServers.push(`http://localhost:${port}`);
+            console.log(`  ✅ Found server on port ${port}`);
+          }
+          resolve();
+        });
+
+        req.on('error', () => resolve());
+        req.on('timeout', () => {
+          req.destroy();
+          resolve();
+        });
+
+        req.end();
+      });
+    } catch (e) {
+      // Port not available, continue
+    }
+  }
+
+  if (detectedServers.length === 0) {
+    console.log('  ❌ No dev servers detected');
+  }
+
+  return detectedServers;
 }
 
 module.exports = {
@@ -340,5 +393,6 @@ module.exports = {
   extractTableData,
   handleCookieBanner,
   retryWithBackoff,
-  createContext
+  createContext,
+  detectDevServers
 };
