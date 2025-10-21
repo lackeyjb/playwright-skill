@@ -1,6 +1,6 @@
 # Playwright Skill - Test Report
 
-**Generated:** 2025-10-21 15:08:30
+**Generated:** 2025-10-21 17:25:51
 
 **Overall Status:** ✅ PASSED
 
@@ -11,8 +11,8 @@
 | Total Test Suites | 3 |
 | Passed Suites | 3 |
 | Failed Suites | 0 |
-| Total Tests | 18 |
-| Passed Tests | 18 |
+| Total Tests | 19 |
+| Passed Tests | 19 |
 | Failed Tests | 0 |
 | Success Rate | 100.0% |
 
@@ -22,10 +22,10 @@
 
 Validates dynamic path resolution functionality
 
-- **Total Tests:** 5
-- **Passed:** 5
+- **Total Tests:** 6
+- **Passed:** 6
 - **Failed:** 0
-- **Duration:** 26ms
+- **Duration:** 24ms
 
 ### Installation Methods Tests - ✅ PASSED
 
@@ -34,7 +34,7 @@ Tests all three installation methods
 - **Total Tests:** 8
 - **Passed:** 8
 - **Failed:** 0
-- **Duration:** 803ms
+- **Duration:** 826ms
 
 ### Command Validation Tests - ✅ PASSED
 
@@ -43,7 +43,7 @@ Validates all commands use $SKILL_DIR correctly
 - **Total Tests:** 5
 - **Passed:** 5
 - **Failed:** 0
-- **Duration:** 45ms
+- **Duration:** 30ms
 
 ## Validation Checklist
 

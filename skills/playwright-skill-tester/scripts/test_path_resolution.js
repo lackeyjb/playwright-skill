@@ -159,6 +159,7 @@ function testCriticalCommands(skillMdPath) {
   const content = fs.readFileSync(skillMdPath, 'utf8');
 
   const criticalCommands = [
+    { name: 'Dependency check', pattern: /cd \$SKILL_DIR.*checkDependencies/ },
     { name: 'Dev server detection', pattern: /cd \$SKILL_DIR.*detectDevServers/ },
     { name: 'Script execution', pattern: /cd \$SKILL_DIR.*node run\.js/ },
     { name: 'Setup command', pattern: /cd \$SKILL_DIR.*npm run setup/ }
@@ -173,6 +174,31 @@ function testCriticalCommands(skillMdPath) {
   });
 
   return allPassed;
+}
+
+// Test 6: Verify dependency check workflow is documented
+function testDependencyCheckWorkflow(skillMdPath) {
+  log('\n🔧 Test 6: Dependency Check Workflow', 'yellow');
+
+  const content = fs.readFileSync(skillMdPath, 'utf8');
+
+  // Check for dependency check in critical workflow
+  const hasDependencyCheckStep = content.includes('Check dependencies FIRST');
+  testResult('Has "Check dependencies FIRST" in workflow', hasDependencyCheckStep);
+
+  // Check for checkDependencies() helper reference
+  const hasCheckDepsHelper = content.includes('checkDependencies()');
+  testResult('References checkDependencies() helper', hasCheckDepsHelper);
+
+  // Check for dependency troubleshooting
+  const hasDependencyTroubleshooting = content.includes('Cannot find module \'playwright\'');
+  testResult('Has dependency troubleshooting section', hasDependencyTroubleshooting);
+
+  // Check for auto-setup instructions
+  const hasAutoSetup = content.includes('READY') && content.includes('MISSING');
+  testResult('Documents READY/MISSING dependency states', hasAutoSetup);
+
+  return hasDependencyCheckStep && hasCheckDepsHelper && hasDependencyTroubleshooting && hasAutoSetup;
 }
 
 // Main test runner
@@ -226,6 +252,14 @@ function runAllTests() {
   // Test 5: Critical commands
   results.total++;
   if (testCriticalCommands(skillMdPath)) {
+    results.passed++;
+  } else {
+    results.failed++;
+  }
+
+  // Test 6: Dependency check workflow
+  results.total++;
+  if (testDependencyCheckWorkflow(skillMdPath)) {
     results.passed++;
   } else {
     results.failed++;

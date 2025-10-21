@@ -328,6 +328,29 @@ async function createContext(browser, options = {}) {
 }
 
 /**
+ * Check if Playwright dependencies are installed
+ * @returns {boolean} True if dependencies are installed
+ */
+function checkDependencies() {
+  const fs = require('fs');
+  const path = require('path');
+
+  // Check if node_modules exists
+  const nodeModulesPath = path.join(__dirname, '..', 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    return false;
+  }
+
+  // Check if playwright is installed
+  const playwrightPath = path.join(nodeModulesPath, 'playwright');
+  if (!fs.existsSync(playwrightPath)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Detect running dev servers on common ports
  * @param {Array<number>} customPorts - Additional ports to check
  * @returns {Promise<Array>} Array of detected server URLs
@@ -353,7 +376,17 @@ async function detectDevServers(customPorts = []) {
           method: 'HEAD',
           timeout: 500
         }, (res) => {
-          if (res.statusCode < 500) {
+          // Check if response is successful and appears to be web content
+          const contentType = res.headers['content-type'] || '';
+          const isWebContent =
+            contentType.includes('text/html') ||
+            contentType.includes('application/json') ||
+            contentType.includes('text/plain') ||
+            contentType.includes('application/javascript');
+
+          // Accept if: good status code AND (is web content OR no content-type header)
+          // The "no content-type" fallback handles dev servers that don't set headers on HEAD requests
+          if (res.statusCode < 500 && (isWebContent || !contentType)) {
             detectedServers.push(`http://localhost:${port}`);
             console.log(`  ✅ Found server on port ${port}`);
           }
@@ -394,5 +427,6 @@ module.exports = {
   handleCookieBanner,
   retryWithBackoff,
   createContext,
+  checkDependencies,
   detectDevServers
 };

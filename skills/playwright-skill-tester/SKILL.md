@@ -31,7 +31,7 @@ Use this skill when:
 Run comprehensive tests with automatic dependency setup:
 
 ```bash
-cd /Users/bryanlackey/workspace/github.com/lackeyjb/playwright-skill/skills/playwright-skill-tester
+cd <path-to-playwright-skill-tester>
 node scripts/generate_test_report.js --setup
 ```
 
@@ -171,7 +171,7 @@ node scripts/setup_dependencies.js
 - First time testing a fresh clone
 - Testing after pulling latest changes that update dependencies
 - When "Dev server detection" test failures occur
-- To ensure 100% test success rate (18/18 tests passing)
+- To ensure 100% test success rate
 
 ## Success Criteria
 
@@ -217,7 +217,7 @@ For detailed information, consult these reference documents:
 
 ## Tips
 
-- Use `--setup` flag for 100% pass rate (18/18 tests)
+- Use `--setup` flag for 100% pass rate
 - Run `generate_test_report.js` first - it runs all tests automatically
 - Individual test scripts can be run for focused debugging
 - Test reports include actionable next steps

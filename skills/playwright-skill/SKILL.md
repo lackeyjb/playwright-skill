@@ -20,28 +20,39 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 
 **CRITICAL WORKFLOW - Follow these steps in order:**
 
-1. **Auto-detect dev servers** - For localhost testing, ALWAYS run server detection FIRST:
+1. **Check dependencies FIRST** - Before any operations, verify Playwright is installed:
+   ```bash
+   cd $SKILL_DIR && node -e "const deps = require('./lib/helpers').checkDependencies(); console.log(deps ? 'READY' : 'MISSING')"
+   ```
+   - If output is **"MISSING"**: Run setup command and inform user:
+     ```bash
+     cd $SKILL_DIR && npm run setup
+     ```
+   - If output is **"READY"**: Proceed to next step
+
+2. **Auto-detect dev servers** - For localhost testing, run server detection:
    ```bash
    cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(servers => console.log(JSON.stringify(servers)))"
    ```
-   - If **1 server found**: Use it automatically, inform user
+   - If **1 server found**: Ask user to confirm it's correct before using
    - If **multiple servers found**: Ask user which one to test
-   - If **no servers found**: Ask for URL or offer to help start dev server
+   - If **no servers found**: Ask if user needs to start a dev server (e.g., `npm start`) or provide URL
 
-2. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.js`
+3. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.js`
 
-3. **Use visible browser by default** - Always use `headless: false` unless user specifically requests headless mode
+4. **Use visible browser by default** - Always use `headless: false` unless user specifically requests headless mode
 
-4. **Parameterize URLs** - Always make URLs configurable via environment variable or constant at top of script
+5. **Parameterize URLs** - Always make URLs configurable via environment variable or constant at top of script
 
 ## How It Works
 
 1. You describe what you want to test/automate
-2. I auto-detect running dev servers (or ask for URL if testing external site)
-3. I write custom Playwright code in `/tmp/playwright-test-*.js` (won't clutter your project)
-4. I execute it via: `cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js`
-5. Results displayed in real-time, browser window visible for debugging
-6. Test files auto-cleaned from /tmp by your OS
+2. I check if dependencies are installed (auto-setup if needed)
+3. I auto-detect running dev servers (or ask for URL if testing external site)
+4. I write custom Playwright code in `/tmp/playwright-test-*.js` (won't clutter your project)
+5. I execute it via: `cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js`
+6. Results displayed in real-time, browser window visible for debugging
+7. Test files auto-cleaned from /tmp by your OS
 
 ## Setup (First Time)
 
@@ -52,70 +63,7 @@ npm run setup
 
 This installs Playwright and Chromium browser. Only needed once.
 
-## Execution Pattern
-
-**Step 1: Detect dev servers (for localhost testing)**
-
-```bash
-cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
-```
-
-**Step 2: Write test script to /tmp with URL parameter**
-
-```javascript
-// /tmp/playwright-test-page.js
-const { chromium } = require('playwright');
-
-// Parameterized URL (detected or user-provided)
-const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
-
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
-
-  await page.goto(TARGET_URL);
-  console.log('Page loaded:', await page.title());
-
-  await page.screenshot({ path: '/tmp/screenshot.png', fullPage: true });
-  console.log('📸 Screenshot saved to /tmp/screenshot.png');
-
-  await browser.close();
-})();
-```
-
-**Step 3: Execute from skill directory**
-
-```bash
-cd $SKILL_DIR && node run.js /tmp/playwright-test-page.js
-```
-
 ## Common Patterns
-
-### Test a Page (Multiple Viewports)
-
-```javascript
-// /tmp/playwright-test-responsive.js
-const { chromium } = require('playwright');
-
-const TARGET_URL = 'http://localhost:3001'; // Auto-detected
-
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 100 });
-  const page = await browser.newPage();
-
-  // Desktop test
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto(TARGET_URL);
-  console.log('Desktop - Title:', await page.title());
-  await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
-
-  // Mobile test
-  await page.setViewportSize({ width: 375, height: 667 });
-  await page.screenshot({ path: '/tmp/mobile.png', fullPage: true });
-
-  await browser.close();
-})();
-```
 
 ### Test Login Flow
 
@@ -338,7 +286,9 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 
 ## Tips
 
-- **CRITICAL: Detect servers FIRST** - Always run `detectDevServers()` before writing test code for localhost testing
+- **CRITICAL: Check dependencies FIRST** - Always run `checkDependencies()` before any operations; auto-setup if missing
+- **CRITICAL: Confirm detected servers** - Always ask user to confirm detected servers before using them
+- **CRITICAL: Offer to start servers** - If no servers detected, ask if user needs to start one (e.g., `npm start`)
 - **Use /tmp for test files** - Write to `/tmp/playwright-test-*.js`, never to skill directory or user's project
 - **Parameterize URLs** - Put detected/provided URL in a `TARGET_URL` constant at the top of every script
 - **DEFAULT: Visible browser** - Always use `headless: false` unless user explicitly asks for headless mode
@@ -350,10 +300,32 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 
 ## Troubleshooting
 
-**Playwright not installed:**
+**First-time use: Cannot find module 'playwright'**
+
+This happens when dependencies aren't installed yet. Run the setup command:
 ```bash
 cd $SKILL_DIR && npm run setup
 ```
+
+The skill should auto-detect this and run setup automatically, but you can also run it manually.
+
+**False positive: Server detected but nothing is running**
+
+The improved detectDevServers() now validates content-type headers to reduce false positives. If a server is still incorrectly detected:
+1. Manually specify the URL instead of using auto-detection
+2. The skill will now ask you to confirm detected servers before using them
+
+**No dev server detected but one is running**
+
+If your server is on a non-standard port, either:
+1. Specify the URL manually when asked
+2. Or start the server and the skill will detect it on common ports
+
+**Server not started**
+
+If no server is detected, the skill will ask if you need to start one:
+- For npm projects: `npm start`
+- For other setups: specify the command and the skill will run it in the background
 
 **Module not found:**
 Ensure running from skill directory via `run.js` wrapper
@@ -369,10 +341,15 @@ Add wait: `await page.waitForSelector('.element', { timeout: 10000 })`
 ```
 User: "Test if the marketing page looks good"
 
-Claude: I'll test the marketing page across multiple viewports. Let me first detect running servers...
+Claude: I'll test the marketing page across multiple viewports. Let me first check dependencies...
+[Runs: checkDependencies()]
+[Output: READY]
+Now let me detect running servers...
 [Runs: detectDevServers()]
 [Output: Found server on port 3001]
-I found your dev server running on http://localhost:3001
+I found a dev server on http://localhost:3001. Is this correct?
+
+User: "Yes"
 
 [Writes custom automation script to /tmp/playwright-test-marketing.js with URL parameterized]
 [Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-marketing.js]
@@ -382,14 +359,21 @@ I found your dev server running on http://localhost:3001
 ```
 User: "Check if login redirects correctly"
 
-Claude: I'll test the login flow. First, let me check for running servers...
+Claude: I'll test the login flow. Let me check dependencies first...
+[Runs: checkDependencies()]
+[Output: READY]
+Now checking for running servers...
 [Runs: detectDevServers()]
-[Output: Found servers on ports 3000 and 3001]
-I found 2 dev servers. Which one should I test?
-- http://localhost:3000
-- http://localhost:3001
+[Output: No dev servers detected]
+I didn't detect any running dev servers. Would you like me to start one (e.g., npm start)?
 
-User: "Use 3001"
+User: "Yes, run npm start"
+
+[Runs: npm start in background]
+[Waits 3 seconds]
+[Runs: detectDevServers()]
+[Output: Found server on port 3000]
+Great! Server is running on http://localhost:3000
 
 [Writes login automation to /tmp/playwright-test-login.js]
 [Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-login.js]
