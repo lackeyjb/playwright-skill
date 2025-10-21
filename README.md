@@ -180,6 +180,12 @@ Run `npm run install-all-browsers` from the skill directory.
 
 When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
 
+## Development & Testing
+
+This repository includes a comprehensive testing suite for validating the playwright-skill across all installation methods. The testing skill automatically detects path resolution issues, validates installations, and generates detailed test reports.
+
+See [skills/playwright-skill-tester/](skills/playwright-skill-tester/) for automated testing capabilities and [USAGE.md](skills/playwright-skill-tester/USAGE.md) for detailed usage instructions.
+
 ## Contributing
 
 Contributions are welcome. Fork the repository, create a feature branch, make your changes, and submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
