@@ -6,6 +6,14 @@ author: Claude Assistant
 tags: [testing, automation, browser, e2e, playwright, web-testing]
 ---
 
+**IMPORTANT - Path Resolution:**
+This skill can be installed in different locations (plugin system, manual installation, global, or project-specific). Before executing any commands, determine the skill directory based on where you loaded this SKILL.md file, and use that path in all commands below. Replace `$SKILL_DIR` with the actual discovered path.
+
+Common installation paths:
+- Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
+- Manual global: `~/.claude/skills/playwright-skill`
+- Project-specific: `<project>/.claude/skills/playwright-skill`
+
 # Playwright Browser Automation
 
 General-purpose browser automation skill. I'll write custom Playwright code for any automation task you request and execute it via the universal executor.
@@ -14,7 +22,7 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 
 1. **Auto-detect dev servers** - For localhost testing, ALWAYS run server detection FIRST:
    ```bash
-   cd ~/.claude/skills/playwright-skill && node -e "require('./lib/helpers').detectDevServers().then(servers => console.log(JSON.stringify(servers)))"
+   cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(servers => console.log(JSON.stringify(servers)))"
    ```
    - If **1 server found**: Use it automatically, inform user
    - If **multiple servers found**: Ask user which one to test
@@ -31,14 +39,14 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 1. You describe what you want to test/automate
 2. I auto-detect running dev servers (or ask for URL if testing external site)
 3. I write custom Playwright code in `/tmp/playwright-test-*.js` (won't clutter your project)
-4. I execute it via: `cd ~/.claude/skills/playwright-skill && node run.js /tmp/playwright-test-*.js`
+4. I execute it via: `cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js`
 5. Results displayed in real-time, browser window visible for debugging
 6. Test files auto-cleaned from /tmp by your OS
 
 ## Setup (First Time)
 
 ```bash
-cd ~/.claude/skills/playwright-skill
+cd $SKILL_DIR
 npm run setup
 ```
 
@@ -49,7 +57,7 @@ This installs Playwright and Chromium browser. Only needed once.
 **Step 1: Detect dev servers (for localhost testing)**
 
 ```bash
-cd ~/.claude/skills/playwright-skill && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
+cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
 ```
 
 **Step 2: Write test script to /tmp with URL parameter**
@@ -78,7 +86,7 @@ const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
 **Step 3: Execute from skill directory**
 
 ```bash
-cd ~/.claude/skills/playwright-skill && node run.js /tmp/playwright-test-page.js
+cd $SKILL_DIR && node run.js /tmp/playwright-test-page.js
 ```
 
 ## Common Patterns
@@ -272,7 +280,7 @@ For quick one-off tasks, you can execute code inline without creating files:
 
 ```bash
 # Take a quick screenshot
-cd ~/.claude/skills/playwright-skill && node run.js "
+cd $SKILL_DIR && node run.js "
 const browser = await chromium.launch({ headless: false });
 const page = await browser.newPage();
 await page.goto('http://localhost:3001');
@@ -344,7 +352,7 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 
 **Playwright not installed:**
 ```bash
-cd ~/.claude/skills/playwright-skill && npm run setup
+cd $SKILL_DIR && npm run setup
 ```
 
 **Module not found:**
@@ -367,7 +375,7 @@ Claude: I'll test the marketing page across multiple viewports. Let me first det
 I found your dev server running on http://localhost:3001
 
 [Writes custom automation script to /tmp/playwright-test-marketing.js with URL parameterized]
-[Runs: cd ~/.claude/skills/playwright-skill && node run.js /tmp/playwright-test-marketing.js]
+[Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-marketing.js]
 [Shows results with screenshots from /tmp/]
 ```
 
@@ -384,7 +392,7 @@ I found 2 dev servers. Which one should I test?
 User: "Use 3001"
 
 [Writes login automation to /tmp/playwright-test-login.js]
-[Runs: cd ~/.claude/skills/playwright-skill && node run.js /tmp/playwright-test-login.js]
+[Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-login.js]
 [Reports: ✅ Login successful, redirected to /dashboard]
 ```
 
