@@ -384,9 +384,14 @@ async function detectDevServers(customPorts = []) {
             contentType.includes('text/plain') ||
             contentType.includes('application/javascript');
 
-          // Accept if: good status code AND (is web content OR no content-type header)
-          // The "no content-type" fallback handles dev servers that don't set headers on HEAD requests
-          if (res.statusCode < 500 && (isWebContent || !contentType)) {
+          // Accept if:
+          // 1. Has web content-type (any status < 500), OR
+          // 2. Has 2xx/3xx status AND no content-type (lenient for dev servers without headers)
+          // This rejects 4xx errors like 403 Forbidden (AirTunes) while accepting valid web servers
+          const isValidServer = res.statusCode < 500 &&
+            (isWebContent || (!contentType && res.statusCode >= 200 && res.statusCode < 400));
+
+          if (isValidServer) {
             detectedServers.push(`http://localhost:${port}`);
             console.log(`  ✅ Found server on port ${port}`);
           }
