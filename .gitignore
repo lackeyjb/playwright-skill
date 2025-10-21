@@ -30,3 +30,7 @@ screenshots/
 # Environment
 .env
 .env.local
+
+# Testing
+MANUAL_TEST.md
+TEST_PLAN.md
