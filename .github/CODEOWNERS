@@ -1,0 +1,15 @@
+# CODEOWNERS file - Defines who must approve changes to specific files
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# GitHub workflows - Require owner approval to prevent unauthorized Claude usage
+/.github/workflows/ @lackeyjb
+
+# GitHub configuration files - Protect all GitHub settings
+/.github/ @lackeyjb
+
+# Security-sensitive files
+/package.json @lackeyjb
+/package-lock.json @lackeyjb
+
+# Optional: Uncomment to require approval for all changes
+# * @lackeyjb
