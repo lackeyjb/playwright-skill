@@ -1,8 +1,8 @@
 {
-  "name": "playwright-skill",
-  "version": "4.0.2",
-  "description": "General-purpose browser automation with Playwright for Claude Code with auto-detection and smart test management",
-  "author": "lackeyjb",
+  "name": "playwright-skill-gamedev",
+  "version": "1.0.0",
+  "description": "Automated testing for 2D browser-based platformer games with Playwright - test player controls, collision detection, performance, and game mechanics",
+  "author": "Claude Code Community",
   "main": "run.js",
   "scripts": {
     "setup": "npm install && npx playwright install chromium",
@@ -10,11 +10,17 @@
   },
   "keywords": [
     "playwright",
+    "game-testing",
+    "platformer",
+    "browser-games",
     "automation",
-    "browser-testing",
-    "web-automation",
+    "canvas",
+    "webgl",
+    "phaser",
+    "pixijs",
+    "performance-testing",
     "claude-skill",
-    "general-purpose"
+    "2d-games"
   ],
   "dependencies": {
     "playwright": "^1.48.0"

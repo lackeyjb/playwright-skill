@@ -1,19 +1,32 @@
-# Playwright Skill for Claude Code
+# Platformer Game Testing Skill for Claude Code
 
-**General-purpose browser automation as a Claude Skill**
+**Automated testing for 2D browser-based platformer games**
 
-A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
+A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to test platformer games with automated gameplay, performance monitoring, and game state validation. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
 
-Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
+Claude autonomously decides when to use this skill for game testing tasks, loading only the minimal information required for your specific platformer game testing needs.
 
 ## Features
 
-- **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
-- **Visible Browser by Default** - See automation in real-time with `headless: false`
+- **Game-Specific Testing** - Test player controls, jumping mechanics, collision detection, and level progression
+- **Performance Monitoring** - Track FPS during gameplay to identify performance bottlenecks
+- **Game State Validation** - Extract and verify score, health, lives, and other game stats
+- **Action Sequences** - Execute complex movement patterns and combo moves
+- **Visible Browser by Default** - Watch your game tests in real-time with `headless: false`
+- **Auto-Detection** - Automatically find running dev servers on common ports
 - **Zero Module Resolution Errors** - Universal executor ensures proper module access
-- **Progressive Disclosure** - Concise SKILL.md with full API reference loaded only when needed
-- **Safe Cleanup** - Smart temp file management without race conditions
-- **Comprehensive Helpers** - Optional utility functions for common tasks
+- **Comprehensive Helpers** - Platformer-specific utility functions for common testing tasks
+
+## What Can This Skill Test?
+
+- Player movement (left, right, jump, double jump, combos)
+- Collision detection (platforms, enemies, obstacles, collectibles)
+- Level completion and progression
+- Scoring and stats tracking
+- Game over conditions
+- Performance and FPS monitoring
+- Responsive design across different viewports
+- Game initialization and loading
 
 ## Installation
 
@@ -23,13 +36,13 @@ This skill can be installed via the Claude Code plugin system or manually.
 
 ```bash
 # Add this repository as a marketplace
-/plugin marketplace add lackeyjb/playwright-skill
+/plugin marketplace add <your-repo-url>
 
 # Install the plugin
-/plugin install playwright-skill@playwright-skill
+/plugin install playwright-skill-gamedev@playwright-skill
 
 # Navigate to the skill directory and run setup
-cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
+cd ~/.claude/plugins/marketplaces/playwright-skill-gamedev/skills/playwright-skill
 npm run setup
 ```
 
@@ -45,10 +58,10 @@ Install directly from GitHub to your skills directory:
 cd ~/.claude/skills
 
 # Clone the skill
-git clone https://github.com/lackeyjb/playwright-skill.git
+git clone <your-repo-url> playwright-skill-gamedev
 
 # Navigate into the skill directory (note the nested structure)
-cd playwright-skill/skills/playwright-skill
+cd playwright-skill-gamedev/skills/playwright-skill
 
 # Install dependencies and Chromium browser
 npm run setup
@@ -57,102 +70,129 @@ npm run setup
 **Project-Specific Installation:**
 ```bash
 # Install in a specific project
-cd /path/to/your/project
+cd /path/to/your/game/project
 mkdir -p .claude/skills
 cd .claude/skills
-git clone https://github.com/lackeyjb/playwright-skill.git
-cd playwright-skill/skills/playwright-skill
+git clone <your-repo-url> playwright-skill-gamedev
+cd playwright-skill-gamedev/skills/playwright-skill
 npm run setup
 ```
 
-### Option 3: Download Release
-
-1. Download the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
-2. Extract to:
-   - Global: `~/.claude/skills/playwright-skill`
-   - Project: `/path/to/your/project/.claude/skills/playwright-skill`
-3. Navigate to the skill directory and run setup:
-   ```bash
-   cd playwright-skill/skills/playwright-skill
-   npm run setup
-   ```
-
 ### Verify Installation
 
-Run `/help` to confirm the skill is loaded, then ask Claude to perform a simple browser task like "Test if google.com loads".
+Run `/help` to confirm the skill is loaded, then ask Claude to perform a simple game test like "Test the player movement controls".
 
 ## Quick Start
 
-After installation, simply ask Claude to test or automate any browser task. Claude will write custom Playwright code, execute it, and return results with screenshots and console output.
+After installation, simply ask Claude to test your platformer game. Claude will write custom Playwright code, execute it, and return results with screenshots and performance metrics.
 
 ## Usage Examples
 
-### Test Any Page
+### Basic Game Testing
 ```
-"Test the homepage"
-"Check if the contact form works"
-"Verify the signup flow"
-```
-
-### Visual Testing
-```
-"Take screenshots of the dashboard in mobile and desktop"
-"Test responsive design across different viewports"
+"Test the player controls"
+"Check if jumping works correctly"
+"Test the double jump mechanic"
+"Verify collision with platforms"
 ```
 
-### Interaction Testing
+### Performance Testing
 ```
-"Fill out the registration form and submit it"
-"Click through the main navigation"
-"Test the search functionality"
+"Monitor FPS during gameplay"
+"Check game performance under load"
+"Test if the game runs smoothly at 60 FPS"
 ```
 
-### Validation
+### Game Mechanics
 ```
-"Check for broken links"
-"Verify all images load"
-"Test form validation"
+"Test if the player can complete the first level"
+"Check if collecting coins increases the score"
+"Verify game over when player falls off screen"
+"Test the scoring system"
+```
+
+### Advanced Testing
+```
+"Test responsive design across mobile and desktop"
+"Execute a running jump combo"
+"Monitor performance during complex action sequences"
+"Verify level complete detection"
 ```
 
 ## How It Works
 
-1. Describe what you want to test or automate
-2. Claude writes custom Playwright code for the task
-3. The universal executor (run.js) runs it with proper module resolution
+1. Describe what you want to test (e.g., "test jumping mechanics")
+2. Claude auto-detects your running dev server
+3. Claude writes custom Playwright code for your specific test
 4. Browser opens (visible by default) and automation executes
-5. Results are displayed with console output and screenshots
+5. Results are displayed with console output, screenshots, and performance metrics
+6. Test files are automatically cleaned up from `/tmp`
 
 ## Configuration
 
 Default settings:
-- **Headless:** `false` (browser visible unless explicitly requested otherwise)
-- **Slow Motion:** `100ms` for visibility
-- **Timeout:** `30s`
+- **Headless:** `false` (browser visible for debugging)
+- **Slow Motion:** `50ms` for visibility during game testing
+- **Timeout:** `10s` for game initialization
 - **Screenshots:** Saved to `/tmp/`
 
 ## Project Structure
 
 ```
-playwright-skill/
+playwright-skill-gamedev/
 ├── .claude-plugin/
-│   ├── plugin.json          # Plugin metadata for distribution
+│   ├── plugin.json          # Plugin metadata
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
-│   └── playwright-skill/    # The actual skill (Claude discovers this)
-│       ├── SKILL.md         # What Claude reads (314 lines)
-│       ├── run.js           # Universal executor (proper module resolution)
+│   └── playwright-skill/    # The actual skill
+│       ├── SKILL.md         # Claude reads this (game testing instructions)
+│       ├── run.js           # Universal executor
 │       ├── package.json     # Dependencies & setup scripts
 │       └── lib/
-│           └── helpers.js   # Optional utility functions
-├── API_REFERENCE.md         # Full Playwright API reference (630 lines)
-├── README.md                # This file - user documentation
+│           └── helpers.js   # Platformer testing utilities
+├── API_REFERENCE.md         # Full Playwright API reference
+├── README.md                # This file
 ├── CONTRIBUTING.md          # Contribution guidelines
 └── LICENSE                  # MIT License
 ```
 
+## Game Testing Helpers
+
+The skill includes specialized helpers for platformer game testing:
+
+```javascript
+// Game initialization
+await helpers.waitForGameReady(page);
+
+// Player controls
+await helpers.movePlayer(page, 'left', 300);
+await helpers.movePlayer(page, 'right', 500);
+await helpers.movePlayer(page, 'jump', 200);
+await helpers.doubleJump(page);
+
+// Action sequences
+await helpers.executeActionSequence(page, [
+  { direction: 'right', duration: 500 },
+  { direction: 'jump', duration: 150, wait: 200 }
+]);
+
+// Game state
+const stats = await helpers.extractGameStats(page);
+const gameOver = await helpers.isGameOver(page);
+const levelComplete = await helpers.isLevelComplete(page);
+
+// Performance
+const metrics = await helpers.monitorPerformance(page, 5000);
+
+// Screenshots
+await helpers.captureGameScreen(page, 'test-result');
+```
+
+See `skills/playwright-skill/lib/helpers.js` for complete documentation.
+
 ## Advanced Usage
 
-Claude will automatically load `API_REFERENCE.md` when needed for comprehensive documentation on selectors, network interception, authentication, visual regression testing, mobile emulation, performance testing, and debugging.
+Claude will automatically load `API_REFERENCE.md` when needed for comprehensive Playwright documentation including selectors, network interception, authentication, visual regression testing, mobile emulation, and debugging.
 
 ## Dependencies
 
@@ -169,20 +209,63 @@ Navigate to the skill directory and run `npm run setup`.
 Ensure automation runs via `run.js`, which handles module resolution.
 
 **Browser doesn't open?**
-Verify `headless: false` is set. The skill defaults to visible browser unless headless mode is requested.
+Verify `headless: false` is set. The skill defaults to visible browser.
 
-**Install all browsers?**
-Run `npm run install-all-browsers` from the skill directory.
+**Game doesn't load?**
+Check the canvas selector and increase timeout in `waitForGameReady()`.
+
+**Controls don't respond?**
+Ensure the game canvas has focus and accepts keyboard input.
+
+**Performance monitoring shows 0 FPS?**
+Verify the game is actively rendering with requestAnimationFrame.
+
+## Supported Game Frameworks
+
+This skill works with any 2D browser-based platformer game, including:
+
+- **Phaser** (2.x and 3.x)
+- **PixiJS**
+- **Native HTML5 Canvas**
+- **WebGL games**
+- **Kaboom.js**
+- **Babylon.js** (2D games)
+- **Three.js** (2D games)
+- **Custom game engines**
 
 ## What is a Claude Skill?
 
 [Skills](https://www.anthropic.com/news/skills) are modular capabilities that extend Claude's functionality. Unlike slash commands that you invoke manually, skills are model-invoked—Claude autonomously decides when to use them based on your request.
 
-When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
+When you ask Claude to test a platformer game or validate game mechanics, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with performance metrics and screenshots.
 
 ## Contributing
 
 Contributions are welcome. Fork the repository, create a feature branch, make your changes, and submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Example Session
+
+```
+User: "Test if my platformer game's jump mechanic works"
+
+Claude: I'll test the jump mechanic in your platformer game. Let me first detect running servers...
+
+[Detects server on http://localhost:3000]
+
+I found your dev server on port 3000. I'll write a test to verify the jump mechanic.
+
+[Writes test script to /tmp/platformer-test-jump.js]
+[Executes: cd ~/.claude/skills/playwright-skill-gamedev/skills/playwright-skill && node run.js /tmp/platformer-test-jump.js]
+
+Results:
+- Game loaded successfully
+- Basic jump: Working
+- Double jump: Working
+- Jump height: Consistent
+- Screenshot saved: /tmp/jump-test-2025-10-26.png
+
+All jump mechanics are functioning correctly!
+```
 
 ## Learn More
 
@@ -191,7 +274,7 @@ Contributions are welcome. Fork the repository, create a feature branch, make yo
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
 - [Plugin Marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
 - [API_REFERENCE.md](API_REFERENCE.md) - Full Playwright documentation
-- [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
+- [GitHub Issues](https://github.com/your-repo/issues)
 
 ## License
 
