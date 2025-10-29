@@ -17,9 +17,26 @@ Claude autonomously decides when to use this skill based on your browser automat
 
 ## Installation
 
-This skill can be installed via the Claude Code plugin system or manually.
+This repository is structured as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) containing a skill. You can install it as either a **plugin** (recommended) or extract it as a **standalone skill**.
 
-### Option 1: Via Plugin System (Recommended)
+### Understanding the Structure
+
+This repository uses the plugin format with a nested structure:
+```
+playwright-skill/              # Plugin root
+├── .claude-plugin/           # Plugin metadata
+└── skills/
+    └── playwright-skill/     # The actual skill
+        └── SKILL.md
+```
+
+Claude Code expects skills to be directly in folders under `.claude/skills/`, so manual installation requires extracting the nested skill folder.
+
+---
+
+### Option 1: Plugin Installation (Recommended)
+
+Install via Claude Code's plugin system for automatic updates and team distribution:
 
 ```bash
 # Add this repository as a marketplace
@@ -35,47 +52,63 @@ npm run setup
 
 Verify installation by running `/help` to confirm the skill is available.
 
-### Option 2: Manual Git Clone
+---
 
-Install directly from GitHub to your skills directory:
+### Option 2: Standalone Skill Installation
+
+To install as a standalone skill (without the plugin system), extract only the skill folder:
 
 **Global Installation (Available Everywhere):**
 ```bash
-# Navigate to your Claude skills directory
-cd ~/.claude/skills
+# Clone to a temporary location
+git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
 
-# Clone the skill
-git clone https://github.com/lackeyjb/playwright-skill.git
+# Copy only the skill folder to your global skills directory
+mkdir -p ~/.claude/skills
+cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
-# Navigate into the skill directory (note the nested structure)
-cd playwright-skill/skills/playwright-skill
-
-# Install dependencies and Chromium browser
+# Navigate to the skill and run setup
+cd ~/.claude/skills/playwright-skill
 npm run setup
+
+# Clean up temporary files
+rm -rf /tmp/playwright-skill-temp
 ```
 
 **Project-Specific Installation:**
 ```bash
-# Install in a specific project
-cd /path/to/your/project
+# Clone to a temporary location
+git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+
+# Copy only the skill folder to your project
 mkdir -p .claude/skills
-cd .claude/skills
-git clone https://github.com/lackeyjb/playwright-skill.git
-cd playwright-skill/skills/playwright-skill
+cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
+
+# Navigate to the skill and run setup
+cd .claude/skills/playwright-skill
 npm run setup
+
+# Clean up temporary files
+rm -rf /tmp/playwright-skill-temp
 ```
+
+**Why this structure?** The plugin format requires the `skills/` directory for organizing multiple skills within a plugin. When installing as a standalone skill, you only need the inner `skills/playwright-skill/` folder contents.
+
+---
 
 ### Option 3: Download Release
 
-1. Download the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
-2. Extract to:
+1. Download and extract the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
+2. Copy only the `skills/playwright-skill/` folder to:
    - Global: `~/.claude/skills/playwright-skill`
    - Project: `/path/to/your/project/.claude/skills/playwright-skill`
 3. Navigate to the skill directory and run setup:
    ```bash
-   cd playwright-skill/skills/playwright-skill
+   cd ~/.claude/skills/playwright-skill  # or your project path
    npm run setup
    ```
+
+---
 
 ### Verify Installation
 
