@@ -380,6 +380,113 @@ async function detectDevServers(customPorts = []) {
   return detectedServers;
 }
 
+/**
+ * Clean up browser resources to prevent memory leaks
+ * @param {Object} browser - Browser instance to clean up
+ * @param {Object} options - Cleanup options
+ */
+async function cleanupBrowser(browser, options = {}) {
+  if (!browser) {
+    console.log('No browser instance to clean up');
+    return;
+  }
+
+  try {
+    console.log('🧹 Cleaning up browser resources...');
+    
+    // Close all contexts and pages
+    const contexts = browser.contexts();
+    for (const context of contexts) {
+      const pages = context.pages();
+      for (const page of pages) {
+        try {
+          await page.close();
+        } catch (e) {
+          console.warn('Failed to close page:', e.message);
+        }
+      }
+      try {
+        await context.close();
+      } catch (e) {
+        console.warn('Failed to close context:', e.message);
+      }
+    }
+    
+    // Close the browser
+    await browser.close();
+    console.log('✅ Browser cleanup completed');
+    
+  } catch (error) {
+    console.error('❌ Error during browser cleanup:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Set up automatic cleanup on process exit
+ * @param {Object} browser - Browser instance to monitor
+ */
+function setupAutoCleanup(browser) {
+  const cleanup = async () => {
+    console.log('🛑 Process ending, cleaning up browser...');
+    try {
+      await cleanupBrowser(browser);
+    } catch (e) {
+      console.error('Cleanup failed:', e.message);
+    }
+  };
+
+  // Register cleanup handlers
+  process.on('exit', cleanup);
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('uncaughtException', cleanup);
+  process.on('unhandledRejection', cleanup);
+}
+
+/**
+ * Monitor memory usage and trigger cleanup if needed
+ * @param {Object} browser - Browser instance to monitor
+ * @param {number} thresholdMB - Memory threshold in MB
+ */
+function setupMemoryMonitoring(browser, thresholdMB = 1024) {
+  const checkInterval = setInterval(async () => {
+    const usage = process.memoryUsage();
+    const heapUsedMB = usage.heapUsed / 1024 / 1024;
+    
+    if (heapUsedMB > thresholdMB) {
+      console.warn(`⚠️ Memory usage high: ${heapUsedMB.toFixed(2)}MB, triggering cleanup`);
+      
+      try {
+        // Force garbage collection if available
+        if (global.gc) {
+          global.gc();
+        }
+        
+        // Close all pages to free memory
+        const contexts = browser.contexts();
+        for (const context of contexts) {
+          const pages = context.pages();
+          for (const page of pages) {
+            await page.close();
+          }
+        }
+        
+        console.log('🧹 Memory cleanup triggered');
+      } catch (e) {
+        console.error('Memory cleanup failed:', e.message);
+      }
+    }
+  }, 30000); // Check every 30 seconds
+
+  // Cleanup interval on process exit
+  process.on('exit', () => clearInterval(checkInterval));
+  process.on('SIGINT', () => clearInterval(checkInterval));
+  process.on('SIGTERM', () => clearInterval(checkInterval));
+  
+  return checkInterval;
+}
+
 module.exports = {
   launchBrowser,
   createPage,
@@ -394,5 +501,8 @@ module.exports = {
   handleCookieBanner,
   retryWithBackoff,
   createContext,
-  detectDevServers
+  detectDevServers,
+  cleanupBrowser,
+  setupAutoCleanup,
+  setupMemoryMonitoring
 };
