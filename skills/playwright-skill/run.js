@@ -165,6 +165,10 @@ async function main() {
   // Clean up old temp files from previous runs
   cleanupOldTempFiles();
 
+  // Set up memory monitoring
+  let memoryMonitorInterval = null;
+  const memoryThreshold = 1024; // 1GB threshold
+
   // Check Playwright installation
   if (!checkPlaywrightInstalled()) {
     const installed = installPlaywright();
@@ -180,6 +184,60 @@ async function main() {
   // Create temporary file for execution
   const tempFile = path.join(__dirname, `.temp-execution-${Date.now()}.js`);
 
+  // Set up memory monitoring
+  memoryMonitorInterval = setInterval(() => {
+    const usage = process.memoryUsage();
+    const heapUsedMB = usage.heapUsed / 1024 / 1024;
+    
+    if (heapUsedMB > memoryThreshold) {
+      console.warn(`⚠️ Memory usage high: ${heapUsedMB.toFixed(2)}MB`);
+      
+      // Force garbage collection if available
+      if (global.gc) {
+        global.gc();
+        console.log('🗑️ Forced garbage collection');
+      }
+    }
+  }, 30000); // Check every 30 seconds
+
+  // Set up cleanup function
+  const cleanup = () => {
+    console.log('🧹 Cleaning up resources...');
+    
+    // Clear memory monitoring
+    if (memoryMonitorInterval) {
+      clearInterval(memoryMonitorInterval);
+    }
+    
+    // Clean up temp file
+    try {
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+        console.log('🗑️ Temp file cleaned up');
+      }
+    } catch (e) {
+      console.warn('Failed to clean up temp file:', e.message);
+    }
+    
+    // Force garbage collection
+    if (global.gc) {
+      global.gc();
+    }
+  };
+
+  // Register cleanup handlers
+  process.on('exit', cleanup);
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Interrupt received, cleaning up...');
+    cleanup();
+    process.exit(0);
+  });
+  process.on('SIGTERM', () => {
+    console.log('\n🛑 Termination received, cleaning up...');
+    cleanup();
+    process.exit(0);
+  });
+
   try {
     // Write code to temp file
     fs.writeFileSync(tempFile, code, 'utf8');
@@ -188,7 +246,7 @@ async function main() {
     console.log('🚀 Starting automation...\n');
     require(tempFile);
 
-    // Note: Temp file will be cleaned up on next run
+    // Note: Temp file will be cleaned up on process exit
     // This allows long-running async operations to complete safely
 
   } catch (error) {
@@ -197,6 +255,9 @@ async function main() {
       console.error('\n📋 Stack trace:');
       console.error(error.stack);
     }
+    
+    // Clean up on error
+    cleanup();
     process.exit(1);
   }
 }
