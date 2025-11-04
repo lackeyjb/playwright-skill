@@ -347,6 +347,7 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 - **Wait strategies:** Use `waitForURL`, `waitForSelector`, `waitForLoadState` instead of fixed timeouts
 - **Error handling:** Always use try-catch for robust automation
 - **Console output:** Use `console.log()` to track progress and show what's happening
+- **Screenshot cleanup:** Set `SCREENSHOT_COMPACT_HOURS=12` to auto-delete old screenshots after 12 hours (default: 24, use -1 to disable)
 
 ## Troubleshooting
 

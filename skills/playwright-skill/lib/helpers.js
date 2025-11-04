@@ -151,17 +151,68 @@ async function extractTexts(page, selector) {
  * @param {Object} options - Screenshot options
  */
 async function takeScreenshot(page, name, options = {}) {
+  const fs = require('fs');
+  const path = require('path');
+
+  // Get cleanup configuration from environment variable
+  const cleanupHours = parseInt(process.env.SCREENSHOT_COMPACT_HOURS || '24');
+
+  // Generate timestamp and filename
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `${name}-${timestamp}.png`;
-  
+
+  // Clean up old screenshots before taking new one
+  if (cleanupHours > 0) {
+    try {
+      // Default to /tmp for screenshots (as shown in examples)
+      const screenshotDir = options.path ? path.dirname(options.path) : '.';
+
+      // Only clean up in /tmp or specified directories, not current directory
+      if (screenshotDir !== '.') {
+        if (fs.existsSync(screenshotDir)) {
+          const files = fs.readdirSync(screenshotDir);
+          const pngFiles = files.filter(f => f.endsWith('.png'));
+
+          if (pngFiles.length > 0) {
+            const threshold = Date.now() - (cleanupHours * 60 * 60 * 1000);
+            let deletedCount = 0;
+            let freedSpace = 0;
+
+            for (const file of pngFiles) {
+              const filePath = path.join(screenshotDir, file);
+              try {
+                const stats = fs.statSync(filePath);
+                if (stats.mtime.getTime() < threshold) {
+                  freedSpace += stats.size;
+                  fs.unlinkSync(filePath);
+                  deletedCount++;
+                }
+              } catch (err) {
+                // Skip files that can't be accessed
+              }
+            }
+
+            if (deletedCount > 0) {
+              const freedMB = (freedSpace / 1024 / 1024).toFixed(2);
+              console.log(`🗑️  Cleaned up ${deletedCount} old screenshots (${cleanupHours}+ hours old), freed ${freedMB}MB`);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Silently continue if cleanup fails
+    }
+  }
+
+  // Take screenshot
   await page.screenshot({
-    path: filename,
+    path: options.path || filename,
     fullPage: options.fullPage !== false,
     ...options
   });
-  
-  console.log(`Screenshot saved: ${filename}`);
-  return filename;
+
+  console.log(`Screenshot saved: ${options.path || filename}`);
+  return options.path || filename;
 }
 
 /**
