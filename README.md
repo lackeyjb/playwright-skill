@@ -162,6 +162,7 @@ Default settings:
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
 - **Screenshots:** Saved to `/tmp/`
+- **SCREENSHOT_COMPACT_HOURS:** `24` (auto-deletes old screenshots after 24 hours, set to -1 to disable)
 
 ## Project Structure
 
