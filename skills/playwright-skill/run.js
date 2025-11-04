@@ -81,26 +81,65 @@ function getCodeToExecute() {
 }
 
 /**
- * Clean up old temporary execution files from previous runs
+ * Clean up old files matching a pattern
+ * @param {Object} options - Cleanup options
+ * @param {string} options.directory - Directory to clean (defaults to __dirname)
+ * @param {Function} options.filter - Filter function to match files
+ * @param {number} options.ageThresholdHours - Only delete files older than this (optional)
+ * @param {boolean} options.silent - Suppress console output (default: true)
+ * @returns {Object} Cleanup statistics
  */
-function cleanupOldTempFiles() {
-  try {
-    const files = fs.readdirSync(__dirname);
-    const tempFiles = files.filter(f => f.startsWith('.temp-execution-') && f.endsWith('.js'));
+function cleanupOldFiles(options = {}) {
+  const {
+    directory = __dirname,
+    filter,
+    ageThresholdHours = null,
+    silent = true
+  } = options;
 
-    if (tempFiles.length > 0) {
-      tempFiles.forEach(file => {
-        const filePath = path.join(__dirname, file);
+  const stats = {
+    filesDeleted: 0,
+    spaceFreed: 0
+  };
+
+  try {
+    const files = fs.readdirSync(directory);
+    const matchingFiles = filter ? files.filter(filter) : files;
+
+    if (matchingFiles.length > 0) {
+      const now = Date.now();
+      const ageThreshold = ageThresholdHours ? now - (ageThresholdHours * 60 * 60 * 1000) : null;
+
+      matchingFiles.forEach(file => {
+        const filePath = path.join(directory, file);
         try {
+          const fileStats = fs.statSync(filePath);
+
+          // Check age threshold if specified
+          if (ageThreshold && fileStats.mtime.getTime() >= ageThreshold) {
+            return; // Skip files that are too new
+          }
+
+          stats.spaceFreed += fileStats.size;
           fs.unlinkSync(filePath);
+          stats.filesDeleted++;
         } catch (e) {
           // Ignore errors - file might be in use or already deleted
         }
       });
+
+      // Log results if not silent
+      if (!silent && stats.filesDeleted > 0) {
+        const freedMB = (stats.spaceFreed / 1024 / 1024).toFixed(2);
+        const ageInfo = ageThresholdHours ? ` (${ageThresholdHours}+ hours old)` : '';
+        console.log(`🗑️  Cleaned up ${stats.filesDeleted} files${ageInfo}, freed ${freedMB}MB`);
+      }
     }
   } catch (e) {
     // Ignore directory read errors
   }
+
+  return stats;
 }
 
 /**
@@ -163,7 +202,11 @@ async function main() {
   console.log('🎭 Playwright Skill - Universal Executor\n');
 
   // Clean up old temp files from previous runs
-  cleanupOldTempFiles();
+  cleanupOldFiles({
+    directory: __dirname,
+    filter: f => f.startsWith('.temp-execution-') && f.endsWith('.js'),
+    silent: true
+  });
 
   // Check Playwright installation
   if (!checkPlaywrightInstalled()) {
@@ -201,8 +244,13 @@ async function main() {
   }
 }
 
-// Run main function
-main().catch(error => {
-  console.error('❌ Fatal error:', error.message);
-  process.exit(1);
-});
+// Export cleanup function for use in helpers
+module.exports = { cleanupOldFiles };
+
+// Run main function only if executed directly
+if (require.main === module) {
+  main().catch(error => {
+    console.error('❌ Fatal error:', error.message);
+    process.exit(1);
+  });
+}
