@@ -6,6 +6,8 @@ A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to w
 
 Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
 
+Made using Claude Code.
+
 ## Features
 
 - **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
