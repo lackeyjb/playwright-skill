@@ -13,6 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { cleanupOldFiles } = require('./lib/utils');
 
 // Change to skill directory for proper module resolution
 process.chdir(__dirname);
@@ -81,29 +82,6 @@ function getCodeToExecute() {
 }
 
 /**
- * Clean up old temporary execution files from previous runs
- */
-function cleanupOldTempFiles() {
-  try {
-    const files = fs.readdirSync(__dirname);
-    const tempFiles = files.filter(f => f.startsWith('.temp-execution-') && f.endsWith('.js'));
-
-    if (tempFiles.length > 0) {
-      tempFiles.forEach(file => {
-        const filePath = path.join(__dirname, file);
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          // Ignore errors - file might be in use or already deleted
-        }
-      });
-    }
-  } catch (e) {
-    // Ignore directory read errors
-  }
-}
-
-/**
  * Wrap code in async IIFE if not already wrapped
  */
 function wrapCodeIfNeeded(code) {
@@ -163,7 +141,11 @@ async function main() {
   console.log('🎭 Playwright Skill - Universal Executor\n');
 
   // Clean up old temp files from previous runs
-  cleanupOldTempFiles();
+  cleanupOldFiles({
+    directory: __dirname,
+    filter: f => f.startsWith('.temp-execution-') && f.endsWith('.js'),
+    silent: true
+  });
 
   // Check Playwright installation
   if (!checkPlaywrightInstalled()) {

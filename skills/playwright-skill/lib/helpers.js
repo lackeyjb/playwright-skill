@@ -139,7 +139,7 @@ async function safeType(page, selector, text, options = {}) {
  */
 async function extractTexts(page, selector) {
   await page.waitForSelector(selector, { timeout: 10000 });
-  return await page.$$eval(selector, elements => 
+  return await page.$$eval(selector, elements =>
     elements.map(el => el.textContent?.trim()).filter(Boolean)
   );
 }
@@ -151,15 +151,38 @@ async function extractTexts(page, selector) {
  * @param {Object} options - Screenshot options
  */
 async function takeScreenshot(page, name, options = {}) {
+  const path = require('path');
+  const { cleanupOldFiles } = require('./utils');
+
+  // Get cleanup configuration from environment variable
+  const cleanupHours = parseInt(process.env.SCREENSHOT_COMPACT_HOURS || '24');
+
+  // Generate timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename = `${name}-${timestamp}.png`;
-  
+
+  // Default to /tmp for screenshots (as shown in examples)
+  const screenshotDir = options.path ? path.dirname(options.path) : '/tmp';
+
+  // Generate filename with proper directory
+  const filename = options.path || path.join(screenshotDir, `${name}-${timestamp}.png`);
+
+  // Clean up old screenshots before taking new one
+  if (cleanupHours > 0) {
+    cleanupOldFiles({
+      directory: screenshotDir,
+      filter: f => f.endsWith('.png'),
+      ageThresholdHours: cleanupHours,
+      silent: false
+    });
+  }
+
+  // Take screenshot
   await page.screenshot({
     path: filename,
     fullPage: options.fullPage !== false,
     ...options
   });
-  
+
   console.log(`Screenshot saved: ${filename}`);
   return filename;
 }
