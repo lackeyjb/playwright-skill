@@ -4,6 +4,38 @@
 const { chromium, firefox, webkit } = require('playwright');
 
 /**
+ * Parse extra HTTP headers from environment variables.
+ * Supports two formats:
+ * - PW_HEADER_NAME + PW_HEADER_VALUE: Single header (simple, common case)
+ * - PW_EXTRA_HEADERS: JSON object for multiple headers (advanced)
+ * Single header format takes precedence if both are set.
+ * @returns {Object|null} Headers object or null if none configured
+ */
+function getExtraHeadersFromEnv() {
+  const headerName = process.env.PW_HEADER_NAME;
+  const headerValue = process.env.PW_HEADER_VALUE;
+
+  if (headerName && headerValue) {
+    return { [headerName]: headerValue };
+  }
+
+  const headersJson = process.env.PW_EXTRA_HEADERS;
+  if (headersJson) {
+    try {
+      const parsed = JSON.parse(headersJson);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+      console.warn('PW_EXTRA_HEADERS must be a JSON object, ignoring...');
+    } catch (e) {
+      console.warn('Failed to parse PW_EXTRA_HEADERS as JSON:', e.message);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Launch browser with standard configuration
  * @param {string} browserType - 'chromium', 'firefox', or 'webkit'
  * @param {Object} options - Additional launch options
@@ -313,6 +345,14 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
  * @param {Object} options - Context options
  */
 async function createContext(browser, options = {}) {
+  const envHeaders = getExtraHeadersFromEnv();
+
+  // Merge environment headers with any passed in options
+  const mergedHeaders = {
+    ...envHeaders,
+    ...options.extraHTTPHeaders
+  };
+
   const defaultOptions = {
     viewport: { width: 1280, height: 720 },
     userAgent: options.mobile
@@ -321,7 +361,9 @@ async function createContext(browser, options = {}) {
     permissions: options.permissions || [],
     geolocation: options.geolocation,
     locale: options.locale || 'en-US',
-    timezoneId: options.timezoneId || 'America/New_York'
+    timezoneId: options.timezoneId || 'America/New_York',
+    // Only include extraHTTPHeaders if we have any
+    ...(Object.keys(mergedHeaders).length > 0 && { extraHTTPHeaders: mergedHeaders })
   };
 
   return await browser.newContext({ ...defaultOptions, ...options });
@@ -394,5 +436,6 @@ module.exports = {
   handleCookieBanner,
   retryWithBackoff,
   createContext,
-  detectDevServers
+  detectDevServers,
+  getExtraHeadersFromEnv
 };
