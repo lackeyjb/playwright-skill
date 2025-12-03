@@ -1,0 +1,41 @@
+[project]
+name = "patchright-skill"
+version = "5.0.0"
+description = "Undetected browser automation with Patchright for Claude Code - bypasses bot detection"
+authors = [
+    {name = "lackeyjb"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = [
+    "patchright",
+    "playwright",
+    "automation",
+    "browser-testing",
+    "web-automation",
+    "claude-skill",
+    "anti-detection",
+    "undetected"
+]
+
+dependencies = [
+    "patchright>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+patchright-skill = "run:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["run"]
+packages = ["lib"]
