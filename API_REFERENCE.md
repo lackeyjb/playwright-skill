@@ -1,11 +1,14 @@
-# Playwright Skill - Complete API Reference
+# Patchright Skill - Complete API Reference
 
-This document contains the comprehensive Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](SKILL.md).
+This document contains the comprehensive Patchright/Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](skills/playwright-skill/SKILL.md).
+
+**Note:** Patchright is a drop-in replacement for Playwright with anti-bot detection patches. All Playwright APIs work identically - just change imports from `playwright` to `patchright`.
 
 ## Table of Contents
 
 - [Installation & Setup](#installation--setup)
 - [Core Patterns](#core-patterns)
+- [Anti-Detection Best Practices](#anti-detection-best-practices)
 - [Selectors & Locators](#selectors--locators)
 - [Common Actions](#common-actions)
 - [Waiting Strategies](#waiting-strategies)
@@ -17,7 +20,6 @@ This document contains the comprehensive Playwright API reference and advanced p
 - [Mobile Testing](#mobile-testing)
 - [Debugging](#debugging)
 - [Performance Testing](#performance-testing)
-- [Parallel Execution](#parallel-execution)
 - [Data-Driven Testing](#data-driven-testing)
 - [Accessibility Testing](#accessibility-testing)
 - [CI/CD Integration](#cicd-integration)
@@ -29,383 +31,438 @@ This document contains the comprehensive Playwright API reference and advanced p
 
 ### Prerequisites
 
-Before using this skill, ensure Playwright is available:
+Before using this skill, ensure Patchright is available:
 
 ```bash
-# Check if Playwright is installed
-npm list playwright 2>/dev/null || echo "Playwright not installed"
+# Check if Patchright is installed
+python3 -c "import patchright; print('Patchright installed')" 2>/dev/null || echo "Patchright not installed"
 
 # Install (if needed)
-cd ~/.claude/skills/playwright-skill
-npm run setup
+pip install patchright
+patchright install chromium
 ```
 
 ### Basic Configuration
 
-Create `playwright.config.ts`:
+```python
+# pytest configuration in conftest.py
+import pytest
+import asyncio
+from patchright.async_api import async_playwright
 
-```typescript
-import { defineConfig, devices } from '@playwright/test';
 
-export default defineConfig({
-  testDir: './tests',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-  webServer: {
-    command: 'npm run start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
-});
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
+async def browser():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False)
+        yield browser
+        await browser.close()
+
+
+@pytest.fixture
+async def page(browser):
+    context = await browser.new_context(
+        viewport={"width": 1280, "height": 720}
+    )
+    page = await context.new_page()
+    yield page
+    await context.close()
 ```
 
 ## Core Patterns
 
-### Basic Browser Automation
+### Basic Browser Automation (Async)
 
-```javascript
-const { chromium } = require('playwright');
+```python
+import asyncio
+from patchright.async_api import async_playwright
 
-(async () => {
-  // Launch browser
-  const browser = await chromium.launch({
-    headless: false,  // Set to true for headless mode
-    slowMo: 50       // Slow down operations by 50ms
-  });
 
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 720 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  });
+async def main():
+    async with async_playwright() as p:
+        # Launch browser
+        browser = await p.chromium.launch(
+            headless=False,  # Set to True for headless mode
+            slow_mo=50       # Slow down operations by 50ms
+        )
 
-  const page = await context.newPage();
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 720},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
 
-  // Navigate
-  await page.goto('https://example.com', {
-    waitUntil: 'networkidle'  // Wait for network to be idle
-  });
+        page = await context.new_page()
 
-  // Your automation here
+        # Navigate
+        await page.goto("https://example.com", wait_until="networkidle")
 
-  await browser.close();
-})();
+        # Your automation here
+
+        await browser.close()
+
+
+asyncio.run(main())
 ```
 
-### Test Structure
+### Synchronous API
 
-```typescript
-import { test, expect } from '@playwright/test';
+```python
+from patchright.sync_api import sync_playwright
 
-test.describe('Feature Name', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-  });
 
-  test('should do something', async ({ page }) => {
-    // Arrange
-    const button = page.locator('button[data-testid="submit"]');
+def main():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
 
-    // Act
-    await button.click();
+        page.goto("https://example.com")
+        print(page.title())
 
-    // Assert
-    await expect(page).toHaveURL('/success');
-    await expect(page.locator('.message')).toHaveText('Success!');
-  });
-});
+        browser.close()
+
+
+main()
 ```
+
+### Test Structure with pytest
+
+```python
+import pytest
+from patchright.async_api import async_playwright
+
+
+class TestFeature:
+    @pytest.fixture(autouse=True)
+    async def setup(self, page):
+        await page.goto("/")
+
+    async def test_should_do_something(self, page):
+        # Arrange
+        button = page.locator('button[data-testid="submit"]')
+
+        # Act
+        await button.click()
+
+        # Assert
+        assert "/success" in page.url
+        await expect(page.locator(".message")).to_have_text("Success!")
+```
+
+## Anti-Detection Best Practices
+
+Patchright includes patches to bypass bot detection. For maximum stealth:
+
+```python
+async def launch_stealth_browser(p):
+    # Best practices for avoiding detection
+    browser = await p.chromium.launch(
+        headless=False,          # Visible browser is harder to detect
+        channel="chrome",         # Use system Chrome if available
+        # Don't add automation flags
+    )
+
+    # For persistent contexts (maximum stealth)
+    context = await p.chromium.launch_persistent_context(
+        user_data_dir="./user-data",
+        channel="chrome",
+        headless=False,
+        viewport=None,  # Use default viewport
+        # Avoid custom headers/user_agent for maximum stealth
+    )
+
+    return browser
+```
+
+**Key principles:**
+- Use `headless=False` (visible browser)
+- Use `channel="chrome"` to use system Chrome
+- Avoid custom user agents unless necessary
+- Avoid custom HTTP headers unless necessary
+- Don't add automation-revealing browser arguments
 
 ## Selectors & Locators
 
 ### Best Practices for Selectors
 
-```javascript
-// PREFERRED: Data attributes (most stable)
-await page.locator('[data-testid="submit-button"]').click();
-await page.locator('[data-cy="user-input"]').fill('text');
+```python
+# PREFERRED: Data attributes (most stable)
+await page.locator('[data-testid="submit-button"]').click()
+await page.locator('[data-cy="user-input"]').fill("text")
 
-// GOOD: Role-based selectors (accessible)
-await page.getByRole('button', { name: 'Submit' }).click();
-await page.getByRole('textbox', { name: 'Email' }).fill('user@example.com');
-await page.getByRole('heading', { level: 1 }).click();
+# GOOD: Role-based selectors (accessible)
+await page.get_by_role("button", name="Submit").click()
+await page.get_by_role("textbox", name="Email").fill("user@example.com")
+await page.get_by_role("heading", level=1).click()
 
-// GOOD: Text content (for unique text)
-await page.getByText('Sign in').click();
-await page.getByText(/welcome back/i).click();
+# GOOD: Text content (for unique text)
+await page.get_by_text("Sign in").click()
+await page.get_by_text(re.compile(r"welcome back", re.I)).click()
 
-// OK: Semantic HTML
-await page.locator('button[type="submit"]').click();
-await page.locator('input[name="email"]').fill('test@test.com');
+# OK: Semantic HTML
+await page.locator('button[type="submit"]').click()
+await page.locator('input[name="email"]').fill("test@test.com")
 
-// AVOID: Classes and IDs (can change frequently)
-await page.locator('.btn-primary').click();  // Avoid
-await page.locator('#submit').click();       // Avoid
+# AVOID: Classes and IDs (can change frequently)
+await page.locator(".btn-primary").click()  # Avoid
+await page.locator("#submit").click()       # Avoid
 
-// LAST RESORT: Complex CSS/XPath
-await page.locator('div.container > form > button').click();  // Fragile
+# LAST RESORT: Complex CSS/XPath
+await page.locator("div.container > form > button").click()  # Fragile
 ```
 
 ### Advanced Locator Patterns
 
-```javascript
-// Filter and chain locators
-const row = page.locator('tr').filter({ hasText: 'John Doe' });
-await row.locator('button').click();
+```python
+# Filter and chain locators
+row = page.locator("tr").filter(has_text="John Doe")
+await row.locator("button").click()
 
-// Nth element
-await page.locator('button').nth(2).click();
+# Nth element
+await page.locator("button").nth(2).click()
 
-// Combining conditions
-await page.locator('button').and(page.locator('[disabled]')).count();
+# First and last
+await page.locator("button").first.click()
+await page.locator("button").last.click()
 
-// Parent/child navigation
-const cell = page.locator('td').filter({ hasText: 'Active' });
-const row = cell.locator('..');
-await row.locator('button.edit').click();
+# Combining conditions
+count = await page.locator("button").and_(page.locator("[disabled]")).count()
+
+# Parent/child navigation
+cell = page.locator("td").filter(has_text="Active")
+row = cell.locator("..")
+await row.locator("button.edit").click()
 ```
 
 ## Common Actions
 
 ### Form Interactions
 
-```javascript
-// Text input
-await page.getByLabel('Email').fill('user@example.com');
-await page.getByPlaceholder('Enter your name').fill('John Doe');
+```python
+# Text input
+await page.get_by_label("Email").fill("user@example.com")
+await page.get_by_placeholder("Enter your name").fill("John Doe")
 
-// Clear and type
-await page.locator('#username').clear();
-await page.locator('#username').type('newuser', { delay: 100 });
+# Clear and type (with delay)
+await page.locator("#username").clear()
+await page.locator("#username").type("newuser", delay=100)
 
-// Checkbox
-await page.getByLabel('I agree').check();
-await page.getByLabel('Subscribe').uncheck();
+# Checkbox
+await page.get_by_label("I agree").check()
+await page.get_by_label("Subscribe").uncheck()
 
-// Radio button
-await page.getByLabel('Option 2').check();
+# Radio button
+await page.get_by_label("Option 2").check()
 
-// Select dropdown
-await page.selectOption('select#country', 'usa');
-await page.selectOption('select#country', { label: 'United States' });
-await page.selectOption('select#country', { index: 2 });
+# Select dropdown
+await page.select_option("select#country", "usa")
+await page.select_option("select#country", label="United States")
+await page.select_option("select#country", index=2)
 
-// Multi-select
-await page.selectOption('select#colors', ['red', 'blue', 'green']);
+# Multi-select
+await page.select_option("select#colors", ["red", "blue", "green"])
 
-// File upload
-await page.setInputFiles('input[type="file"]', 'path/to/file.pdf');
-await page.setInputFiles('input[type="file"]', [
-  'file1.pdf',
-  'file2.pdf'
-]);
+# File upload
+await page.set_input_files('input[type="file"]', "path/to/file.pdf")
+await page.set_input_files('input[type="file"]', [
+    "file1.pdf",
+    "file2.pdf"
+])
 ```
 
 ### Mouse Actions
 
-```javascript
-// Click variations
-await page.click('button');                          // Left click
-await page.click('button', { button: 'right' });    // Right click
-await page.dblclick('button');                       // Double click
-await page.click('button', { position: { x: 10, y: 10 } });  // Click at position
+```python
+# Click variations
+await page.click("button")                           # Left click
+await page.click("button", button="right")           # Right click
+await page.dblclick("button")                        # Double click
+await page.click("button", position={"x": 10, "y": 10})  # Click at position
 
-// Hover
-await page.hover('.menu-item');
+# Hover
+await page.hover(".menu-item")
 
-// Drag and drop
-await page.dragAndDrop('#source', '#target');
+# Drag and drop
+await page.drag_and_drop("#source", "#target")
 
-// Manual drag
-await page.locator('#source').hover();
-await page.mouse.down();
-await page.locator('#target').hover();
-await page.mouse.up();
+# Manual drag
+await page.locator("#source").hover()
+await page.mouse.down()
+await page.locator("#target").hover()
+await page.mouse.up()
 ```
 
 ### Keyboard Actions
 
-```javascript
-// Type with delay
-await page.keyboard.type('Hello World', { delay: 100 });
+```python
+# Type with delay
+await page.keyboard.type("Hello World", delay=100)
 
-// Key combinations
-await page.keyboard.press('Control+A');
-await page.keyboard.press('Control+C');
-await page.keyboard.press('Control+V');
+# Key combinations
+await page.keyboard.press("Control+A")
+await page.keyboard.press("Control+C")
+await page.keyboard.press("Control+V")
 
-// Special keys
-await page.keyboard.press('Enter');
-await page.keyboard.press('Tab');
-await page.keyboard.press('Escape');
-await page.keyboard.press('ArrowDown');
+# Special keys
+await page.keyboard.press("Enter")
+await page.keyboard.press("Tab")
+await page.keyboard.press("Escape")
+await page.keyboard.press("ArrowDown")
 ```
 
 ## Waiting Strategies
 
 ### Smart Waiting
 
-```javascript
-// Wait for element states
-await page.locator('button').waitFor({ state: 'visible' });
-await page.locator('.spinner').waitFor({ state: 'hidden' });
-await page.locator('button').waitFor({ state: 'attached' });
-await page.locator('button').waitFor({ state: 'detached' });
+```python
+# Wait for element states
+await page.locator("button").wait_for(state="visible")
+await page.locator(".spinner").wait_for(state="hidden")
+await page.locator("button").wait_for(state="attached")
+await page.locator("button").wait_for(state="detached")
 
-// Wait for specific conditions
-await page.waitForURL('**/success');
-await page.waitForURL(url => url.pathname === '/dashboard');
+# Wait for specific conditions
+await page.wait_for_url("**/success")
+await page.wait_for_url(lambda url: "/dashboard" in url)
 
-// Wait for network
-await page.waitForLoadState('networkidle');
-await page.waitForLoadState('domcontentloaded');
+# Wait for network
+await page.wait_for_load_state("networkidle")
+await page.wait_for_load_state("domcontentloaded")
 
-// Wait for function
-await page.waitForFunction(() => document.querySelector('.loaded'));
-await page.waitForFunction(
-  text => document.body.innerText.includes(text),
-  'Content loaded'
-);
+# Wait for function
+await page.wait_for_function("document.querySelector('.loaded')")
+await page.wait_for_function(
+    "text => document.body.innerText.includes(text)",
+    "Content loaded"
+)
 
-// Wait for response
-const responsePromise = page.waitForResponse('**/api/users');
-await page.click('button#load-users');
-const response = await responsePromise;
+# Wait for response
+async with page.expect_response("**/api/users") as response_info:
+    await page.click("button#load-users")
+response = await response_info.value
 
-// Wait for request
-await page.waitForRequest(request =>
-  request.url().includes('/api/') && request.method() === 'POST'
-);
+# Wait for request
+async with page.expect_request(lambda r: "/api/" in r.url and r.method == "POST") as request_info:
+    await page.click("button#submit")
+request = await request_info.value
 
-// Custom timeout
-await page.locator('.slow-element').waitFor({
-  state: 'visible',
-  timeout: 10000  // 10 seconds
-});
+# Custom timeout
+await page.locator(".slow-element").wait_for(
+    state="visible",
+    timeout=10000  # 10 seconds
+)
 ```
 
 ## Assertions
 
-### Common Assertions
+### Common Assertions with expect
 
-```javascript
-import { expect } from '@playwright/test';
+```python
+from playwright.async_api import expect
 
-// Page assertions
-await expect(page).toHaveTitle('My App');
-await expect(page).toHaveURL('https://example.com/dashboard');
-await expect(page).toHaveURL(/.*dashboard/);
+# Page assertions
+await expect(page).to_have_title("My App")
+await expect(page).to_have_url("https://example.com/dashboard")
+await expect(page).to_have_url(re.compile(r".*dashboard"))
 
-// Element visibility
-await expect(page.locator('.message')).toBeVisible();
-await expect(page.locator('.spinner')).toBeHidden();
-await expect(page.locator('button')).toBeEnabled();
-await expect(page.locator('input')).toBeDisabled();
+# Element visibility
+await expect(page.locator(".message")).to_be_visible()
+await expect(page.locator(".spinner")).to_be_hidden()
+await expect(page.locator("button")).to_be_enabled()
+await expect(page.locator("input")).to_be_disabled()
 
-// Text content
-await expect(page.locator('h1')).toHaveText('Welcome');
-await expect(page.locator('.message')).toContainText('success');
-await expect(page.locator('.items')).toHaveText(['Item 1', 'Item 2']);
+# Text content
+await expect(page.locator("h1")).to_have_text("Welcome")
+await expect(page.locator(".message")).to_contain_text("success")
+await expect(page.locator(".items")).to_have_text(["Item 1", "Item 2"])
 
-// Input values
-await expect(page.locator('input')).toHaveValue('test@example.com');
-await expect(page.locator('input')).toBeEmpty();
+# Input values
+await expect(page.locator("input")).to_have_value("test@example.com")
+await expect(page.locator("input")).to_be_empty()
 
-// Attributes
-await expect(page.locator('button')).toHaveAttribute('type', 'submit');
-await expect(page.locator('img')).toHaveAttribute('src', /.*\.png/);
+# Attributes
+await expect(page.locator("button")).to_have_attribute("type", "submit")
+await expect(page.locator("img")).to_have_attribute("src", re.compile(r".*\.png"))
 
-// CSS properties
-await expect(page.locator('.error')).toHaveCSS('color', 'rgb(255, 0, 0)');
+# CSS properties
+await expect(page.locator(".error")).to_have_css("color", "rgb(255, 0, 0)")
 
-// Count
-await expect(page.locator('.item')).toHaveCount(5);
+# Count
+await expect(page.locator(".item")).to_have_count(5)
 
-// Checkbox/Radio state
-await expect(page.locator('input[type="checkbox"]')).toBeChecked();
+# Checkbox/Radio state
+await expect(page.locator('input[type="checkbox"]')).to_be_checked()
 ```
 
 ## Page Object Model (POM)
 
 ### Basic Page Object
 
-```javascript
-// pages/LoginPage.js
-class LoginPage {
-  constructor(page) {
-    this.page = page;
-    this.usernameInput = page.locator('input[name="username"]');
-    this.passwordInput = page.locator('input[name="password"]');
-    this.submitButton = page.locator('button[type="submit"]');
-    this.errorMessage = page.locator('.error-message');
-  }
+```python
+# pages/login_page.py
+class LoginPage:
+    def __init__(self, page):
+        self.page = page
+        self.username_input = page.locator('input[name="username"]')
+        self.password_input = page.locator('input[name="password"]')
+        self.submit_button = page.locator('button[type="submit"]')
+        self.error_message = page.locator(".error-message")
 
-  async navigate() {
-    await this.page.goto('/login');
-  }
+    async def navigate(self):
+        await self.page.goto("/login")
 
-  async login(username, password) {
-    await this.usernameInput.fill(username);
-    await this.passwordInput.fill(password);
-    await this.submitButton.click();
-  }
+    async def login(self, username, password):
+        await self.username_input.fill(username)
+        await self.password_input.fill(password)
+        await self.submit_button.click()
 
-  async getErrorMessage() {
-    return await this.errorMessage.textContent();
-  }
-}
+    async def get_error_message(self):
+        return await self.error_message.text_content()
 
-// Usage in test
-test('login with valid credentials', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.navigate();
-  await loginPage.login('user@example.com', 'password123');
-  await expect(page).toHaveURL('/dashboard');
-});
+
+# Usage in test
+async def test_login_with_valid_credentials(page):
+    login_page = LoginPage(page)
+    await login_page.navigate()
+    await login_page.login("user@example.com", "password123")
+    assert "/dashboard" in page.url
 ```
 
 ## Network & API Testing
 
 ### Intercepting Requests
 
-```javascript
-// Mock API responses
-await page.route('**/api/users', route => {
-  route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([
-      { id: 1, name: 'John' },
-      { id: 2, name: 'Jane' }
-    ])
-  });
-});
+```python
+# Mock API responses
+async def mock_users(route):
+    await route.fulfill(
+        status=200,
+        content_type="application/json",
+        body=json.dumps([
+            {"id": 1, "name": "John"},
+            {"id": 2, "name": "Jane"}
+        ])
+    )
 
-// Modify requests
-await page.route('**/api/**', route => {
-  const headers = {
-    ...route.request().headers(),
-    'X-Custom-Header': 'value'
-  };
-  route.continue({ headers });
-});
+await page.route("**/api/users", mock_users)
 
-// Block resources
-await page.route('**/*.{png,jpg,jpeg,gif}', route => route.abort());
+
+# Modify requests
+async def add_custom_header(route):
+    headers = {**route.request.headers, "X-Custom-Header": "value"}
+    await route.continue_(headers=headers)
+
+await page.route("**/api/**", add_custom_header)
+
+
+# Block resources
+await page.route("**/*.{png,jpg,jpeg,gif}", lambda route: route.abort())
 ```
 
 ### Custom Headers via Environment Variables
@@ -414,56 +471,60 @@ The skill supports automatic header injection via environment variables:
 
 ```bash
 # Single header (simple)
-PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill
+PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=patchright-skill
 
 # Multiple headers (JSON)
-PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Request-ID":"123"}'
+PW_EXTRA_HEADERS='{"X-Automated-By":"patchright-skill","X-Request-ID":"123"}'
 ```
 
 These headers are automatically applied to all requests when using:
-- `helpers.createContext(browser)` - headers merged automatically
-- `getContextOptionsWithHeaders(options)` - utility injected by run.js wrapper
+- `helpers.create_context(browser)` - headers merged automatically
+- `get_context_options_with_headers(options)` - utility injected by run.py wrapper
 
-**Precedence (highest to lowest):**
-1. Headers passed directly in `options.extraHTTPHeaders`
-2. Environment variable headers
-3. Playwright defaults
-
-**Use case:** Identify automated traffic so your backend can return LLM-optimized responses (e.g., plain text errors instead of styled HTML).
+**Use case:** Identify automated traffic so your backend can return LLM-optimized responses.
 
 ## Visual Testing
 
 ### Screenshots
 
-```javascript
-// Full page screenshot
-await page.screenshot({
-  path: 'screenshot.png',
-  fullPage: true
-});
+```python
+# Full page screenshot
+await page.screenshot(path="screenshot.png", full_page=True)
 
-// Element screenshot
-await page.locator('.chart').screenshot({
-  path: 'chart.png'
-});
+# Element screenshot
+await page.locator(".chart").screenshot(path="chart.png")
 
-// Visual comparison
-await expect(page).toHaveScreenshot('homepage.png');
+# Clip specific area
+await page.screenshot(
+    path="header.png",
+    clip={"x": 0, "y": 0, "width": 1280, "height": 100}
+)
 ```
 
 ## Mobile Testing
 
-```javascript
-// Device emulation
-const { devices } = require('playwright');
-const iPhone = devices['iPhone 12'];
+```python
+# Device emulation
+from patchright.async_api import async_playwright
 
-const context = await browser.newContext({
-  ...iPhone,
-  locale: 'en-US',
-  permissions: ['geolocation'],
-  geolocation: { latitude: 37.7749, longitude: -122.4194 }
-});
+async def main():
+    async with async_playwright() as p:
+        iphone = p.devices["iPhone 12"]
+
+        browser = await p.chromium.launch(headless=False)
+        context = await browser.new_context(
+            **iphone,
+            locale="en-US",
+            permissions=["geolocation"],
+            geolocation={"latitude": 37.7749, "longitude": -122.4194}
+        )
+
+        page = await context.new_page()
+        await page.goto("https://example.com")
+        # Mobile testing here
+        await browser.close()
+
+asyncio.run(main())
 ```
 
 ## Debugging
@@ -471,82 +532,97 @@ const context = await browser.newContext({
 ### Debug Mode
 
 ```bash
-# Run with inspector
-npx playwright test --debug
+# Run with Playwright inspector
+PWDEBUG=1 python3 your_script.py
 
-# Headed mode
-npx playwright test --headed
-
-# Slow motion
-npx playwright test --headed --slowmo=1000
+# Headed mode with slow motion
+# (configure in your script)
 ```
 
 ### In-Code Debugging
 
-```javascript
-// Pause execution
-await page.pause();
+```python
+# Pause execution (opens inspector)
+await page.pause()
 
-// Console logs
-page.on('console', msg => console.log('Browser log:', msg.text()));
-page.on('pageerror', error => console.log('Page error:', error));
+# Console logs
+page.on("console", lambda msg: print(f"Browser log: {msg.text}"))
+page.on("pageerror", lambda error: print(f"Page error: {error}"))
+
+# Network monitoring
+page.on("request", lambda req: print(f">> {req.method} {req.url}"))
+page.on("response", lambda res: print(f"<< {res.status} {res.url}"))
 ```
 
 ## Performance Testing
 
-```javascript
-// Measure page load time
-const startTime = Date.now();
-await page.goto('https://example.com');
-const loadTime = Date.now() - startTime;
-console.log(`Page loaded in ${loadTime}ms`);
-```
+```python
+import time
 
-## Parallel Execution
+# Measure page load time
+start_time = time.time()
+await page.goto("https://example.com")
+load_time = time.time() - start_time
+print(f"Page loaded in {load_time:.2f}s")
 
-```javascript
-// Run tests in parallel
-test.describe.parallel('Parallel suite', () => {
-  test('test 1', async ({ page }) => {
-    // Runs in parallel with test 2
-  });
-
-  test('test 2', async ({ page }) => {
-    // Runs in parallel with test 1
-  });
-});
+# Get performance metrics
+metrics = await page.evaluate("""() => {
+    const timing = performance.timing;
+    return {
+        dns: timing.domainLookupEnd - timing.domainLookupStart,
+        connection: timing.connectEnd - timing.connectStart,
+        ttfb: timing.responseStart - timing.requestStart,
+        download: timing.responseEnd - timing.responseStart,
+        domInteractive: timing.domInteractive - timing.navigationStart,
+        domComplete: timing.domComplete - timing.navigationStart,
+        load: timing.loadEventEnd - timing.navigationStart
+    };
+}""")
+print(metrics)
 ```
 
 ## Data-Driven Testing
 
-```javascript
-// Parameterized tests
-const testData = [
-  { username: 'user1', password: 'pass1', expected: 'Welcome user1' },
-  { username: 'user2', password: 'pass2', expected: 'Welcome user2' },
-];
+```python
+import pytest
 
-testData.forEach(({ username, password, expected }) => {
-  test(`login with ${username}`, async ({ page }) => {
-    await page.goto('/login');
-    await page.fill('#username', username);
-    await page.fill('#password', password);
-    await page.click('button[type="submit"]');
-    await expect(page.locator('.message')).toHaveText(expected);
-  });
-});
+# Parameterized tests
+test_data = [
+    ("user1", "pass1", "Welcome user1"),
+    ("user2", "pass2", "Welcome user2"),
+]
+
+
+@pytest.mark.parametrize("username,password,expected", test_data)
+async def test_login(page, username, password, expected):
+    await page.goto("/login")
+    await page.fill("#username", username)
+    await page.fill("#password", password)
+    await page.click('button[type="submit"]')
+    await expect(page.locator(".message")).to_have_text(expected)
 ```
 
 ## Accessibility Testing
 
-```javascript
-import { injectAxe, checkA11y } from 'axe-playwright';
+```python
+# Using axe-core
+async def check_accessibility(page):
+    await page.goto("/")
 
-test('accessibility check', async ({ page }) => {
-  await page.goto('/');
-  await injectAxe(page);
-  await checkA11y(page);
-});
+    # Inject axe-core
+    await page.add_script_tag(url="https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.7.0/axe.min.js")
+
+    # Run accessibility check
+    results = await page.evaluate("axe.run()")
+
+    violations = results.get("violations", [])
+    if violations:
+        for v in violations:
+            print(f"Violation: {v['id']} - {v['description']}")
+    else:
+        print("No accessibility violations found")
+
+    return violations
 ```
 
 ## CI/CD Integration
@@ -554,7 +630,7 @@ test('accessibility check', async ({ page }) => {
 ### GitHub Actions
 
 ```yaml
-name: Playwright Tests
+name: Patchright Tests
 on:
   push:
     branches: [main, master]
@@ -563,59 +639,65 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
       - name: Install dependencies
-        run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: |
+          pip install patchright pytest pytest-asyncio
+          patchright install chromium
       - name: Run tests
-        run: npx playwright test
+        run: pytest tests/ -v
 ```
 
 ## Best Practices
 
 1. **Test Organization** - Use descriptive test names, group related tests
 2. **Selector Strategy** - Prefer data-testid attributes, use role-based selectors
-3. **Waiting** - Use Playwright's auto-waiting, avoid hard-coded delays
+3. **Waiting** - Use Patchright's auto-waiting, avoid hard-coded delays
 4. **Error Handling** - Add proper error messages, take screenshots on failure
-5. **Performance** - Run tests in parallel, reuse authentication state
+5. **Anti-Detection** - Use visible browser, avoid custom user agents
 
 ## Common Patterns & Solutions
 
 ### Handling Popups
 
-```javascript
-const [popup] = await Promise.all([
-  page.waitForEvent('popup'),
-  page.click('button.open-popup')
-]);
-await popup.waitForLoadState();
+```python
+async with page.expect_popup() as popup_info:
+    await page.click("button.open-popup")
+popup = await popup_info.value
+await popup.wait_for_load_state()
 ```
 
 ### File Downloads
 
-```javascript
-const [download] = await Promise.all([
-  page.waitForEvent('download'),
-  page.click('button.download')
-]);
-await download.saveAs(`./downloads/${download.suggestedFilename()}`);
+```python
+async with page.expect_download() as download_info:
+    await page.click("button.download")
+download = await download_info.value
+await download.save_as(f"./downloads/{download.suggested_filename}")
 ```
 
 ### iFrames
 
-```javascript
-const frame = page.frameLocator('#my-iframe');
-await frame.locator('button').click();
+```python
+frame = page.frame_locator("#my-iframe")
+await frame.locator("button").click()
 ```
 
 ### Infinite Scroll
 
-```javascript
-async function scrollToBottom(page) {
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(500);
-}
+```python
+async def scroll_to_bottom(page):
+    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    await asyncio.sleep(0.5)
+```
+
+### Handling Alerts
+
+```python
+page.on("dialog", lambda dialog: dialog.accept())
+await page.click("button.trigger-alert")
 ```
 
 ## Troubleshooting
@@ -626,28 +708,27 @@ async function scrollToBottom(page) {
 2. **Timeout errors** - Increase timeout, check network conditions
 3. **Flaky tests** - Use proper waiting strategies, mock external dependencies
 4. **Authentication issues** - Verify auth state is properly saved
+5. **Bot detection triggered** - Use visible browser, avoid custom user agents, ensure using Patchright
 
-## Quick Reference Commands
+### Quick Reference Commands
 
 ```bash
-# Run tests
-npx playwright test
+# Install Patchright
+pip install patchright
 
-# Run in headed mode
-npx playwright test --headed
+# Install browsers
+patchright install chromium
+patchright install chrome  # System Chrome (recommended for stealth)
 
-# Debug tests
-npx playwright test --debug
+# Run with debug
+PWDEBUG=1 python3 your_script.py
 
-# Generate code
-npx playwright codegen https://example.com
-
-# Show report
-npx playwright show-report
+# Generate code (uses playwright codegen)
+python3 -m playwright codegen https://example.com
 ```
 
 ## Additional Resources
 
-- [Playwright Documentation](https://playwright.dev/docs/intro)
-- [API Reference](https://playwright.dev/docs/api/class-playwright)
-- [Best Practices](https://playwright.dev/docs/best-practices)
+- [Playwright Documentation](https://playwright.dev/python/docs/intro) (Patchright is API-compatible)
+- [Patchright GitHub](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python)
+- [Playwright API Reference](https://playwright.dev/python/docs/api/class-playwright)

@@ -1,8 +1,10 @@
-# Playwright Skill for Claude Code
+# Patchright Skill for Claude Code
 
-**General-purpose browser automation as a Claude Skill**
+**Undetected browser automation as a Claude Skill**
 
-A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
+A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Patchright automation on-the-fly - from simple page tests to complex multi-step flows. Uses **Patchright**, an undetected fork of Playwright that bypasses bot detection (Cloudflare, Akamai, DataDome, etc.).
+
+Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
 
 Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
 
@@ -10,8 +12,10 @@ Made using Claude Code.
 
 ## Features
 
+- **Anti-Bot Detection** - Uses Patchright to bypass Cloudflare, Akamai, DataDome, Kasada and more
 - **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
-- **Visible Browser by Default** - See automation in real-time with `headless: false`
+- **Python 3.10+** - Native Python implementation, shares browser installations with your Python projects
+- **Visible Browser by Default** - See automation in real-time with `headless=False`
 - **Zero Module Resolution Errors** - Universal executor ensures proper module access
 - **Progressive Disclosure** - Concise SKILL.md with full API reference loaded only when needed
 - **Safe Cleanup** - Smart temp file management without race conditions
@@ -49,7 +53,8 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 
 # Navigate to the skill directory and run setup
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
-npm run setup
+pip install patchright
+patchright install chromium
 ```
 
 Verify installation by running `/help` to confirm the skill is available.
@@ -71,7 +76,8 @@ cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
 # Navigate to the skill and run setup
 cd ~/.claude/skills/playwright-skill
-npm run setup
+pip install patchright
+patchright install chromium
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -88,7 +94,8 @@ cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 
 # Navigate to the skill and run setup
 cd .claude/skills/playwright-skill
-npm run setup
+pip install patchright
+patchright install chromium
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -107,7 +114,8 @@ rm -rf /tmp/playwright-skill-temp
 3. Navigate to the skill directory and run setup:
    ```bash
    cd ~/.claude/skills/playwright-skill  # or your project path
-   npm run setup
+   pip install patchright
+   patchright install chromium
    ```
 
 ---
@@ -118,7 +126,7 @@ Run `/help` to confirm the skill is loaded, then ask Claude to perform a simple 
 
 ## Quick Start
 
-After installation, simply ask Claude to test or automate any browser task. Claude will write custom Playwright code, execute it, and return results with screenshots and console output.
+After installation, simply ask Claude to test or automate any browser task. Claude will write custom Patchright code, execute it, and return results with screenshots and console output.
 
 ## Usage Examples
 
@@ -149,18 +157,24 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 "Test form validation"
 ```
 
+### Sites with Bot Detection
+```
+"Test the checkout flow on our e-commerce site"
+"Verify the login works on the protected portal"
+```
+
 ## How It Works
 
 1. Describe what you want to test or automate
-2. Claude writes custom Playwright code for the task
-3. The universal executor (run.js) runs it with proper module resolution
+2. Claude writes custom Patchright code for the task
+3. The universal executor (run.py) runs it with proper module resolution
 4. Browser opens (visible by default) and automation executes
 5. Results are displayed with console output and screenshots
 
 ## Configuration
 
 Default settings:
-- **Headless:** `false` (browser visible unless explicitly requested otherwise)
+- **Headless:** `False` (browser visible unless explicitly requested otherwise)
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
 - **Screenshots:** Saved to `/tmp/`
@@ -174,12 +188,13 @@ playwright-skill/
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
 │   └── playwright-skill/    # The actual skill (Claude discovers this)
-│       ├── SKILL.md         # What Claude reads (314 lines)
-│       ├── run.js           # Universal executor (proper module resolution)
-│       ├── package.json     # Dependencies & setup scripts
+│       ├── SKILL.md         # What Claude reads
+│       ├── run.py           # Universal executor (proper module resolution)
+│       ├── pyproject.toml   # Dependencies & setup
 │       └── lib/
-│           └── helpers.js   # Optional utility functions
-├── API_REFERENCE.md         # Full Playwright API reference (630 lines)
+│           ├── __init__.py
+│           └── helpers.py   # Optional utility functions
+├── API_REFERENCE.md         # Full Patchright/Playwright API reference
 ├── README.md                # This file - user documentation
 ├── CONTRIBUTING.md          # Contribution guidelines
 └── LICENSE                  # MIT License
@@ -189,31 +204,51 @@ playwright-skill/
 
 Claude will automatically load `API_REFERENCE.md` when needed for comprehensive documentation on selectors, network interception, authentication, visual regression testing, mobile emulation, performance testing, and debugging.
 
+## Why Patchright?
+
+[Patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python) is an undetected fork of Playwright that includes patches to bypass common bot detection services:
+
+- **Cloudflare** - Passes browser integrity checks
+- **Akamai** - Bypasses Akamai Bot Manager
+- **DataDome** - Evades DataDome detection
+- **Kasada** - Passes Kasada challenges
+- **Fingerprint.com** - Avoids fingerprinting detection
+
+It's a drop-in replacement for Playwright - just change imports from `playwright` to `patchright`.
+
+**Note:** Patchright only supports Chromium-based browsers. Firefox and WebKit are not patched.
+
 ## Dependencies
 
-- Node.js >= 14.0.0
-- Playwright ^1.48.0 (installed via `npm run setup`)
-- Chromium (installed via `npm run setup`)
+- Python >= 3.10
+- Patchright >= 1.0.0 (installed via `pip install patchright`)
+- Chromium (installed via `patchright install chromium`)
 
 ## Troubleshooting
 
-**Playwright not installed?**
-Navigate to the skill directory and run `npm run setup`.
+**Patchright not installed?**
+Navigate to the skill directory and run:
+```bash
+pip install patchright
+patchright install chromium
+```
 
 **Module not found errors?**
-Ensure automation runs via `run.js`, which handles module resolution.
+Ensure automation runs via `run.py`, which handles module resolution.
 
 **Browser doesn't open?**
-Verify `headless: false` is set. The skill defaults to visible browser unless headless mode is requested.
+Verify `headless=False` is set. The skill defaults to visible browser unless headless mode is requested.
 
-**Install all browsers?**
-Run `npm run install-all-browsers` from the skill directory.
+**Bot detection still triggered?**
+- Use `headless=False` (visible browser)
+- Avoid custom user agents
+- Use `channel="chrome"` to use system Chrome if available
 
 ## What is a Claude Skill?
 
 [Skills](https://www.anthropic.com/news/skills) are modular capabilities that extend Claude's functionality. Unlike slash commands that you invoke manually, skills are model-invoked—Claude autonomously decides when to use them based on your request.
 
-When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
+When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Patchright code, and returns results with screenshots and console output.
 
 ## Contributing
 
@@ -225,7 +260,8 @@ Contributions are welcome. Fork the repository, create a feature branch, make yo
 - [Claude Code Skills Documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
 - [Plugin Marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
-- [API_REFERENCE.md](API_REFERENCE.md) - Full Playwright documentation
+- [Patchright Python](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python) - The undetected Playwright fork
+- [API_REFERENCE.md](API_REFERENCE.md) - Full Patchright/Playwright documentation
 - [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
 
 ## License
