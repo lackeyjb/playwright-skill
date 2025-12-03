@@ -46,15 +46,15 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 
 ```bash
 # Add this repository as a marketplace
-/plugin marketplace add lackeyjb/playwright-skill
+/plugin marketplace add a5m0/playwright-skill
 
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
 
 # Navigate to the skill directory and run setup
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
-pip install patchright
-patchright install chromium
+uv pip install patchright
+patchright install chrome
 ```
 
 Verify installation by running `/help` to confirm the skill is available.
@@ -68,7 +68,7 @@ To install as a standalone skill (without the plugin system), extract only the s
 **Global Installation (Available Everywhere):**
 ```bash
 # Clone to a temporary location
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/a5m0/playwright-skill.git /tmp/playwright-skill-temp
 
 # Copy only the skill folder to your global skills directory
 mkdir -p ~/.claude/skills
@@ -76,8 +76,8 @@ cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
 # Navigate to the skill and run setup
 cd ~/.claude/skills/playwright-skill
-pip install patchright
-patchright install chromium
+uv pip install patchright
+patchright install chrome
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -86,7 +86,7 @@ rm -rf /tmp/playwright-skill-temp
 **Project-Specific Installation:**
 ```bash
 # Clone to a temporary location
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/a5m0/playwright-skill.git /tmp/playwright-skill-temp
 
 # Copy only the skill folder to your project
 mkdir -p .claude/skills
@@ -94,8 +94,8 @@ cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 
 # Navigate to the skill and run setup
 cd .claude/skills/playwright-skill
-pip install patchright
-patchright install chromium
+uv pip install patchright
+patchright install chrome
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -107,15 +107,15 @@ rm -rf /tmp/playwright-skill-temp
 
 ### Option 3: Download Release
 
-1. Download and extract the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
+1. Download and extract the latest release from [GitHub Releases](https://github.com/a5m0/playwright-skill/releases)
 2. Copy only the `skills/playwright-skill/` folder to:
    - Global: `~/.claude/skills/playwright-skill`
    - Project: `/path/to/your/project/.claude/skills/playwright-skill`
 3. Navigate to the skill directory and run setup:
    ```bash
    cd ~/.claude/skills/playwright-skill  # or your project path
-   pip install patchright
-   patchright install chromium
+   uv pip install patchright
+   patchright install chrome
    ```
 
 ---
@@ -221,16 +221,16 @@ It's a drop-in replacement for Playwright - just change imports from `playwright
 ## Dependencies
 
 - Python >= 3.10
-- Patchright >= 1.0.0 (installed via `pip install patchright`)
-- Chromium (installed via `patchright install chromium`)
+- Patchright >= 1.0.0 (installed via `uv pip install patchright`)
+- Chrome (installed via `patchright install chrome`)
 
 ## Troubleshooting
 
 **Patchright not installed?**
 Navigate to the skill directory and run:
 ```bash
-pip install patchright
-patchright install chromium
+uv pip install patchright
+patchright install chrome
 ```
 
 **Module not found errors?**
@@ -262,7 +262,7 @@ Contributions are welcome. Fork the repository, create a feature branch, make yo
 - [Plugin Marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
 - [Patchright Python](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python) - The undetected Playwright fork
 - [API_REFERENCE.md](API_REFERENCE.md) - Full Patchright/Playwright documentation
-- [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
+- [GitHub Issues](https://github.com/a5m0/playwright-skill/issues)
 
 ## License
 
