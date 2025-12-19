@@ -1,6 +1,6 @@
 # Playwright Skill - Complete API Reference
 
-This document contains the comprehensive Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](skills/playwright-skill/SKILL.md).
+This document contains the comprehensive Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](SKILL.md).
 
 ## Table of Contents
 
