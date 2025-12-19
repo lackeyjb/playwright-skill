@@ -1,6 +1,6 @@
 # Patchright Skill - Complete API Reference
 
-This document contains the comprehensive Patchright/Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](skills/playwright-skill/SKILL.md).
+This document contains the comprehensive Patchright/Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](SKILL.md).
 
 **Note:** Patchright is a drop-in replacement for Playwright with anti-bot detection patches. All Playwright APIs work identically - just change imports from `playwright` to `patchright`.
 
