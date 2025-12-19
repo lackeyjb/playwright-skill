@@ -2,7 +2,7 @@
 
 **General-purpose browser automation as a Claude Skill**
 
-A [Claude Skill](https://www.anthropic.com/news/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
+A [Claude Skill](https://www.anthropic.com/blog/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
 
 Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
 
@@ -24,6 +24,7 @@ This repository is structured as a [Claude Code Plugin](https://docs.claude.com/
 ### Understanding the Structure
 
 This repository uses the plugin format with a nested structure:
+
 ```
 playwright-skill/              # Plugin root
 ├── .claude-plugin/           # Plugin metadata
@@ -61,6 +62,7 @@ Verify installation by running `/help` to confirm the skill is available.
 To install as a standalone skill (without the plugin system), extract only the skill folder:
 
 **Global Installation (Available Everywhere):**
+
 ```bash
 # Clone to a temporary location
 git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
@@ -78,6 +80,7 @@ rm -rf /tmp/playwright-skill-temp
 ```
 
 **Project-Specific Installation:**
+
 ```bash
 # Clone to a temporary location
 git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
@@ -123,6 +126,7 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 ## Usage Examples
 
 ### Test Any Page
+
 ```
 "Test the homepage"
 "Check if the contact form works"
@@ -130,12 +134,14 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 ```
 
 ### Visual Testing
+
 ```
 "Take screenshots of the dashboard in mobile and desktop"
 "Test responsive design across different viewports"
 ```
 
 ### Interaction Testing
+
 ```
 "Fill out the registration form and submit it"
 "Click through the main navigation"
@@ -143,6 +149,7 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 ```
 
 ### Validation
+
 ```
 "Check for broken links"
 "Verify all images load"
@@ -160,6 +167,7 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 ## Configuration
 
 Default settings:
+
 - **Headless:** `false` (browser visible unless explicitly requested otherwise)
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
@@ -174,12 +182,12 @@ playwright-skill/
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
 │   └── playwright-skill/    # The actual skill (Claude discovers this)
-│       ├── SKILL.md         # What Claude reads (314 lines)
+│       ├── SKILL.md         # What Claude reads
 │       ├── run.js           # Universal executor (proper module resolution)
 │       ├── package.json     # Dependencies & setup scripts
 │       └── lib/
 │           └── helpers.js   # Optional utility functions
-├── API_REFERENCE.md         # Full Playwright API reference (630 lines)
+│       └── API_REFERENCE.md # Full Playwright API reference
 ├── README.md                # This file - user documentation
 ├── CONTRIBUTING.md          # Contribution guidelines
 └── LICENSE                  # MIT License
@@ -191,8 +199,8 @@ Claude will automatically load `API_REFERENCE.md` when needed for comprehensive 
 
 ## Dependencies
 
-- Node.js >= 14.0.0
-- Playwright ^1.48.0 (installed via `npm run setup`)
+- Node.js
+- Playwright (installed via `npm run setup`)
 - Chromium (installed via `npm run setup`)
 
 ## Troubleshooting
@@ -209,11 +217,11 @@ Verify `headless: false` is set. The skill defaults to visible browser unless he
 **Install all browsers?**
 Run `npm run install-all-browsers` from the skill directory.
 
-## What is a Claude Skill?
+## What is a Skill?
 
-[Skills](https://www.anthropic.com/news/skills) are modular capabilities that extend Claude's functionality. Unlike slash commands that you invoke manually, skills are model-invoked—Claude autonomously decides when to use them based on your request.
+[Agent Skills](https://agentskills.io) are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently. When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
 
-When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
+This Playwright skill implements the [open Agent Skills specification](https://agentskills.io), making it compatible across agent platforms.
 
 ## Contributing
 
@@ -221,11 +229,11 @@ Contributions are welcome. Fork the repository, create a feature branch, make yo
 
 ## Learn More
 
-- [Claude Skills](https://www.anthropic.com/news/skills) - Official announcement from Anthropic
+- [Agent Skills Specification](https://agentskills.io) - Open specification for agent skills
 - [Claude Code Skills Documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
 - [Plugin Marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
-- [API_REFERENCE.md](API_REFERENCE.md) - Full Playwright documentation
+- [API_REFERENCE.md](skills/playwright-skill/API_REFERENCE.md) - Full Playwright documentation
 - [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
 
 ## License
