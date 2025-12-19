@@ -1,15 +1,13 @@
 ---
-name: Playwright Browser Automation
+name: playwright-skill
 description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
-version: 4.0.0
-author: Claude Assistant
-tags: [testing, automation, browser, e2e, playwright, web-testing]
 ---
 
 **IMPORTANT - Path Resolution:**
 This skill can be installed in different locations (plugin system, manual installation, global, or project-specific). Before executing any commands, determine the skill directory based on where you loaded this SKILL.md file, and use that path in all commands below. Replace `$SKILL_DIR` with the actual discovered path.
 
 Common installation paths:
+
 - Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
 - Manual global: `~/.claude/skills/playwright-skill`
 - Project-specific: `<project>/.claude/skills/playwright-skill`
@@ -21,9 +19,11 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 **CRITICAL WORKFLOW - Follow these steps in order:**
 
 1. **Auto-detect dev servers** - For localhost testing, ALWAYS run server detection FIRST:
+
    ```bash
    cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(servers => console.log(JSON.stringify(servers)))"
    ```
+
    - If **1 server found**: Use it automatically, inform user
    - If **multiple servers found**: Ask user which one to test
    - If **no servers found**: Ask for URL or offer to help start dev server
@@ -217,12 +217,12 @@ const { chromium } = require('playwright');
   try {
     await page.goto('http://localhost:3000', {
       waitUntil: 'networkidle',
-      timeout: 10000
+      timeout: 10000,
     });
 
     await page.screenshot({
       path: '/tmp/screenshot.png',
-      fullPage: true
+      fullPage: true,
     });
 
     console.log('📸 Screenshot saved to /tmp/screenshot.png');
@@ -249,15 +249,17 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
   const viewports = [
     { name: 'Desktop', width: 1920, height: 1080 },
     { name: 'Tablet', width: 768, height: 1024 },
-    { name: 'Mobile', width: 375, height: 667 }
+    { name: 'Mobile', width: 375, height: 667 },
   ];
 
   for (const viewport of viewports) {
-    console.log(`Testing ${viewport.name} (${viewport.width}x${viewport.height})`);
+    console.log(
+      `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
+    );
 
     await page.setViewportSize({
       width: viewport.width,
-      height: viewport.height
+      height: viewport.height,
     });
 
     await page.goto(TARGET_URL);
@@ -265,7 +267,7 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
     await page.screenshot({
       path: `/tmp/${viewport.name.toLowerCase()}.png`,
-      fullPage: true
+      fullPage: true,
     });
   }
 
@@ -291,6 +293,7 @@ await browser.close();
 ```
 
 **When to use inline vs files:**
+
 - **Inline**: Quick one-off tasks (screenshot, check if element exists, get page title)
 - **Files**: Complex tests, responsive design checks, anything user might want to re-run
 
@@ -326,6 +329,7 @@ See `lib/helpers.js` for full list.
 ## Custom HTTP Headers
 
 Configure custom headers for all HTTP requests via environment variables. Useful for:
+
 - Identifying automated traffic to your backend
 - Getting LLM-optimized responses (e.g., plain text errors instead of styled HTML)
 - Adding authentication tokens globally
@@ -333,12 +337,14 @@ Configure custom headers for all HTTP requests via environment variables. Useful
 ### Configuration
 
 **Single header (common case):**
+
 ```bash
 PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill \
   cd $SKILL_DIR && node run.js /tmp/my-script.js
 ```
 
 **Multiple headers (JSON format):**
+
 ```bash
 PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Debug":"true"}' \
   cd $SKILL_DIR && node run.js /tmp/my-script.js
@@ -358,7 +364,7 @@ For scripts using raw Playwright API, use the injected `getContextOptionsWithHea
 
 ```javascript
 const context = await browser.newContext(
-  getContextOptionsWithHeaders({ viewport: { width: 1920, height: 1080 } })
+  getContextOptionsWithHeaders({ viewport: { width: 1920, height: 1080 } }),
 );
 ```
 
@@ -391,6 +397,7 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 ## Troubleshooting
 
 **Playwright not installed:**
+
 ```bash
 cd $SKILL_DIR && npm run setup
 ```
