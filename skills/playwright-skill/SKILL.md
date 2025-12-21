@@ -51,7 +51,7 @@ When running in **Claude Code for Web** environments, the skill automatically:
 
 ✅ **Detects the environment** - Recognizes Claude Code web containers with proxy authentication
 ✅ **Starts proxy wrapper** - Automatically launches authentication wrapper on `127.0.0.1:18080`
-✅ **Configures Chromium** - Sets up proxy, headless mode, and certificate handling
+✅ **Configures browser** - Prefers Chrome over Chromium for better stealth, sets up proxy, headless mode, and certificate handling
 ✅ **Enables external sites** - Full internet access through authenticated proxy
 
 **No configuration needed** - just use the skill normally:
@@ -71,6 +71,7 @@ The skill transparently handles:
 - Headless mode (automatically enabled in web environments)
 - Certificate validation (bypassed for proxy connections)
 - HTTPS tunnel establishment (via local wrapper)
+- Chrome preference (uses Chrome if available, falls back to Chromium for better bot detection avoidance)
 
 **For external websites in Claude Code web:**
 ```python
@@ -95,6 +96,9 @@ if is_claude_code_web_environment():
 
 # Override headless setting
 config = get_browser_config(headless=False)  # Force visible browser
+
+# Use Chromium instead of Chrome (not recommended for production)
+config = get_browser_config(use_chrome=False)  # Disable Chrome preference
 ```
 
 ## Setup (First Time)
@@ -102,10 +106,13 @@ config = get_browser_config(headless=False)  # Force visible browser
 ```bash
 cd $SKILL_DIR
 pip install patchright
-patchright install chromium
+patchright install chrome  # Recommended for better stealth
+# Or: patchright install chromium  # Fallback option
 ```
 
-This installs Patchright and Chromium browser. Only needed once.
+This installs Patchright and Chrome browser. Only needed once.
+
+**Recommended:** Install Chrome instead of Chromium for better bot detection avoidance and stealth.
 
 **Note:** If you have Playwright already installed, Patchright shares the browser binaries.
 

@@ -214,7 +214,7 @@ def start_proxy_wrapper(proxy_config, verbose=True):
     return {'server': f'http://127.0.0.1:{LOCAL_PROXY_PORT}'}
 
 
-def get_browser_config(headless=None, verbose=True):
+def get_browser_config(headless=None, verbose=True, use_chrome=True):
     """
     Get browser configuration for current environment.
 
@@ -222,10 +222,12 @@ def get_browser_config(headless=None, verbose=True):
     - Proxy wrapper for authentication
     - Headless mode
     - Certificate error handling
+    - Chrome preference for better stealth
 
     Args:
         headless: Override headless setting (None = auto-detect)
         verbose: Print configuration messages
+        use_chrome: Prefer Chrome over Chromium for better stealth (default: True)
 
     Returns:
         Dict with launch options and proxy config
@@ -237,6 +239,12 @@ def get_browser_config(headless=None, verbose=True):
         'context_options': {},
         'proxy_wrapper_used': False
     }
+
+    # Prefer Chrome over Chromium for better stealth and bot detection avoidance
+    if use_chrome:
+        config['launch_options']['channel'] = 'chrome'
+        if verbose:
+            print("   🎯 Using Chrome for improved stealth (falls back to Chromium if unavailable)")
 
     # Check if in Claude Code web environment
     if is_claude_code_web_environment():

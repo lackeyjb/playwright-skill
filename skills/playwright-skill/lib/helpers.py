@@ -491,12 +491,14 @@ except ImportError:
     def get_proxy_config():
         return None
 
-    def get_browser_config(headless=None, verbose=True):
+    def get_browser_config(headless=None, verbose=True, use_chrome=True):
         config = {
             'launch_options': {'args': ['--no-sandbox', '--disable-setuid-sandbox']},
             'context_options': {},
             'proxy_wrapper_used': False
         }
+        if use_chrome:
+            config['launch_options']['channel'] = 'chrome'
         if headless is not None:
             config['launch_options']['headless'] = headless
         return config
