@@ -472,6 +472,42 @@ def detect_dev_servers_sync(custom_ports: List[int] = None) -> List[str]:
     return detected_servers
 
 
+# Import proxy wrapper functions
+try:
+    from .proxy_wrapper import (
+        is_claude_code_web_environment,
+        get_proxy_config,
+        get_browser_config,
+        start_proxy_wrapper,
+        stop_proxy_wrapper,
+    )
+    _PROXY_WRAPPER_AVAILABLE = True
+except ImportError:
+    _PROXY_WRAPPER_AVAILABLE = False
+    # Provide stub functions if import fails
+    def is_claude_code_web_environment():
+        return False
+
+    def get_proxy_config():
+        return None
+
+    def get_browser_config(headless=None, verbose=True):
+        config = {
+            'launch_options': {'args': ['--no-sandbox', '--disable-setuid-sandbox']},
+            'context_options': {},
+            'proxy_wrapper_used': False
+        }
+        if headless is not None:
+            config['launch_options']['headless'] = headless
+        return config
+
+    def start_proxy_wrapper(proxy_config, verbose=True):
+        return None
+
+    def stop_proxy_wrapper():
+        pass
+
+
 __all__ = [
     'get_extra_headers_from_env',
     'launch_browser',
@@ -488,4 +524,9 @@ __all__ = [
     'retry_with_backoff',
     'detect_dev_servers',
     'detect_dev_servers_sync',
+    'is_claude_code_web_environment',
+    'get_proxy_config',
+    'get_browser_config',
+    'start_proxy_wrapper',
+    'stop_proxy_wrapper',
 ]

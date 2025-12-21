@@ -45,6 +45,58 @@ I'll write custom Patchright code for any automation task you request and execut
 5. Results displayed in real-time, browser window visible for debugging
 6. Test files auto-cleaned from /tmp by your OS
 
+## Claude Code Web Environment Auto-Configuration
+
+When running in **Claude Code for Web** environments, the skill automatically:
+
+✅ **Detects the environment** - Recognizes Claude Code web containers with proxy authentication
+✅ **Starts proxy wrapper** - Automatically launches authentication wrapper on `127.0.0.1:18080`
+✅ **Configures Chromium** - Sets up proxy, headless mode, and certificate handling
+✅ **Enables external sites** - Full internet access through authenticated proxy
+
+**No configuration needed** - just use the skill normally:
+
+```python
+from lib.helpers import get_browser_config
+
+# Automatically configures for current environment
+config = get_browser_config()
+
+browser = await p.chromium.launch(**config['launch_options'])
+context = await browser.new_context(**config['context_options'])
+```
+
+The skill transparently handles:
+- JWT proxy authentication (adds `Proxy-Authorization` headers)
+- Headless mode (automatically enabled in web environments)
+- Certificate validation (bypassed for proxy connections)
+- HTTPS tunnel establishment (via local wrapper)
+
+**For external websites in Claude Code web:**
+```python
+# Just write normal code - proxy wrapper handles authentication
+async with async_playwright() as p:
+    config = get_browser_config()
+    browser = await p.chromium.launch(**config['launch_options'])
+    context = await browser.new_context(**config['context_options'])
+    page = await context.new_page()
+
+    # Works with any external site
+    await page.goto('https://github.com')
+    await page.screenshot(path='/tmp/screenshot.png')
+```
+
+**Manual control** (if needed):
+```python
+from lib.helpers import is_claude_code_web_environment, get_browser_config
+
+if is_claude_code_web_environment():
+    print("Running in Claude Code web - auto-config enabled")
+
+# Override headless setting
+config = get_browser_config(headless=False)  # Force visible browser
+```
+
 ## Setup (First Time)
 
 ```bash
