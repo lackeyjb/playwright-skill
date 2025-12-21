@@ -45,15 +45,74 @@ I'll write custom Patchright code for any automation task you request and execut
 5. Results displayed in real-time, browser window visible for debugging
 6. Test files auto-cleaned from /tmp by your OS
 
+## Claude Code Web Environment Auto-Configuration
+
+When running in **Claude Code for Web** environments, the skill automatically:
+
+✅ **Detects the environment** - Uses official `CLAUDE_CODE_REMOTE` environment variable to detect web sessions
+✅ **Starts proxy wrapper** - Automatically launches authentication wrapper on `127.0.0.1:18080`
+✅ **Configures browser** - Prefers Chrome over Chromium for better stealth, sets up proxy, headless mode, and certificate handling
+✅ **Enables external sites** - Full internet access through authenticated proxy
+
+**No configuration needed** - just use the skill normally:
+
+```python
+from lib.helpers import get_browser_config
+
+# Automatically configures for current environment
+config = get_browser_config()
+
+browser = await p.chromium.launch(**config['launch_options'])
+context = await browser.new_context(**config['context_options'])
+```
+
+The skill transparently handles:
+- JWT proxy authentication (adds `Proxy-Authorization` headers)
+- Headless mode (automatically enabled in web environments)
+- Certificate validation (bypassed for proxy connections)
+- HTTPS tunnel establishment (via local wrapper)
+- Chrome preference (uses Chrome if available, falls back to Chromium for better bot detection avoidance)
+
+**For external websites in Claude Code web:**
+```python
+# Just write normal code - proxy wrapper handles authentication
+async with async_playwright() as p:
+    config = get_browser_config()
+    browser = await p.chromium.launch(**config['launch_options'])
+    context = await browser.new_context(**config['context_options'])
+    page = await context.new_page()
+
+    # Works with any external site
+    await page.goto('https://github.com')
+    await page.screenshot(path='/tmp/screenshot.png')
+```
+
+**Manual control** (if needed):
+```python
+from lib.helpers import is_claude_code_web_environment, get_browser_config
+
+if is_claude_code_web_environment():
+    print("Running in Claude Code web - auto-config enabled")
+
+# Override headless setting
+config = get_browser_config(headless=False)  # Force visible browser
+
+# Use Chromium instead of Chrome (not recommended for production)
+config = get_browser_config(use_chrome=False)  # Disable Chrome preference
+```
+
 ## Setup (First Time)
 
 ```bash
 cd $SKILL_DIR
 pip install patchright
-patchright install chromium
+patchright install chrome  # Recommended for better stealth
+# Or: patchright install chromium  # Fallback option
 ```
 
-This installs Patchright and Chromium browser. Only needed once.
+This installs Patchright and Chrome browser. Only needed once.
+
+**Recommended:** Install Chrome instead of Chromium for better bot detection avoidance and stealth.
 
 **Note:** If you have Playwright already installed, Patchright shares the browser binaries.
 
