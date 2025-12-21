@@ -49,7 +49,7 @@ I'll write custom Patchright code for any automation task you request and execut
 
 When running in **Claude Code for Web** environments, the skill automatically:
 
-✅ **Detects the environment** - Recognizes Claude Code web containers with proxy authentication
+✅ **Detects the environment** - Uses official `CLAUDE_CODE_REMOTE` environment variable to detect web sessions
 ✅ **Starts proxy wrapper** - Automatically launches authentication wrapper on `127.0.0.1:18080`
 ✅ **Configures browser** - Prefers Chrome over Chromium for better stealth, sets up proxy, headless mode, and certificate handling
 ✅ **Enables external sites** - Full internet access through authenticated proxy

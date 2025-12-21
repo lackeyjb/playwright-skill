@@ -24,17 +24,21 @@ def is_claude_code_web_environment() -> bool:
     """
     Detect if running in Claude Code for Web environment.
 
+    Uses the official CLAUDE_CODE_REMOTE environment variable which is set to "true"
+    in browser-based Claude Code sessions.
+
     Returns:
         True if in Claude Code web environment with proxy
     """
-    # Check for characteristic environment variables
-    proxy_env = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
+    # Use official Claude Code web detection
+    is_remote = os.environ.get('CLAUDE_CODE_REMOTE') == 'true'
 
-    if not proxy_env:
+    if not is_remote:
         return False
 
-    # Claude Code proxy typically has JWT authentication
-    return 'jwt_' in proxy_env and ('claude_code' in proxy_env or 'container_' in proxy_env)
+    # Verify proxy is configured (required for external sites)
+    proxy_env = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
+    return proxy_env is not None
 
 
 def get_proxy_config():
