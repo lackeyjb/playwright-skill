@@ -13,9 +13,11 @@ Made using Claude Code.
 ## Features
 
 - **Anti-Bot Detection** - Uses Patchright to bypass Cloudflare, Akamai, DataDome, Kasada and more
+- **Claude Code Web Auto-Configuration** - Automatically detects and configures proxy authentication for browser-based Claude Code sessions
+- **Chrome Preference** - Uses Chrome over Chromium by default for better stealth and bot detection avoidance
 - **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
 - **Python 3.10+** - Native Python implementation, shares browser installations with your Python projects
-- **Visible Browser by Default** - See automation in real-time with `headless=False`
+- **Visible Browser by Default** - See automation in real-time with `headless=False` (auto-headless in web environments)
 - **Zero Module Resolution Errors** - Universal executor ensures proper module access
 - **Progressive Disclosure** - Concise SKILL.md with full API reference loaded only when needed
 - **Safe Cleanup** - Smart temp file management without race conditions
@@ -171,13 +173,50 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 4. Browser opens (visible by default) and automation executes
 5. Results are displayed with console output and screenshots
 
+## Claude Code Web Environments
+
+When running in **Claude Code for Web** (browser-based sessions), the skill automatically:
+
+✅ **Detects the environment** - Uses official `CLAUDE_CODE_REMOTE` environment variable
+✅ **Configures proxy authentication** - Automatically starts a local proxy wrapper to handle JWT authentication
+✅ **Enables headless mode** - Runs Chrome in headless mode (no GUI in web containers)
+✅ **Accesses external sites** - Full internet access through authenticated proxy
+
+**No configuration needed** - the skill handles everything automatically. Simply use it normally:
+
+```python
+from lib.helpers import get_browser_config
+
+# Automatically configures for current environment (web or local)
+config = get_browser_config()
+browser = await p.chromium.launch(**config['launch_options'])
+```
+
+**Technical Details:**
+- Detects web environments via `CLAUDE_CODE_REMOTE=true`
+- Starts local proxy wrapper on `127.0.0.1:18080` for authentication
+- Adds `Proxy-Authorization` headers for HTTPS tunnel establishment
+- Uses Chrome by default for better stealth (falls back to Chromium)
+
+See [SKILL.md](skills/playwright-skill/SKILL.md) for full auto-configuration documentation.
+
 ## Configuration
 
 Default settings:
-- **Headless:** `False` (browser visible unless explicitly requested otherwise)
+- **Browser:** Chrome (preferred for stealth), falls back to Chromium if unavailable
+- **Headless:** `False` in local environments (browser visible), automatically `True` in Claude Code Web
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
 - **Screenshots:** Saved to `/tmp/`
+
+Override defaults via `get_browser_config()`:
+```python
+# Force headless mode locally
+config = get_browser_config(headless=True)
+
+# Use Chromium instead of Chrome (not recommended)
+config = get_browser_config(use_chrome=False)
+```
 
 ## Project Structure
 
@@ -216,7 +255,10 @@ Claude will automatically load `API_REFERENCE.md` when needed for comprehensive 
 
 It's a drop-in replacement for Playwright - just change imports from `playwright` to `patchright`.
 
-**Note:** Patchright only supports Chromium-based browsers. Firefox and WebKit are not patched.
+**Browser Support:**
+- **Chrome (Recommended)** - Full Chrome browser with better stealth capabilities
+- **Chromium** - Open-source base, fallback if Chrome unavailable
+- Firefox and WebKit are not supported (no patches available)
 
 ## Dependencies
 
@@ -240,9 +282,9 @@ Ensure automation runs via `run.py`, which handles module resolution.
 Verify `headless=False` is set. The skill defaults to visible browser unless headless mode is requested.
 
 **Bot detection still triggered?**
-- Use `headless=False` (visible browser)
-- Avoid custom user agents
-- Use `channel="chrome"` to use system Chrome if available
+- Ensure Chrome is installed (`patchright install chrome`) - it's more stealthy than Chromium
+- Use `headless=False` (visible browser) when possible
+- Avoid custom user agents and fingerprint modifications
 
 ## What is a Claude Skill?
 
