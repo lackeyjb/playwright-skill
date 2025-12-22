@@ -1,15 +1,13 @@
 ---
-name: Patchright Browser Automation
+name: patchright-skill
 description: Undetected browser automation with Patchright (Playwright fork). Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Bypasses bot detection. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
-version: 5.0.0
-author: Claude Assistant
-tags: [testing, automation, browser, e2e, patchright, playwright, web-testing, anti-detection]
 ---
 
 **IMPORTANT - Path Resolution:**
 This skill can be installed in different locations (plugin system, manual installation, global, or project-specific). Before executing any commands, determine the skill directory based on where you loaded this SKILL.md file, and use that path in all commands below. Replace `$SKILL_DIR` with the actual discovered path.
 
 Common installation paths:
+
 - Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
 - Manual global: `~/.claude/skills/playwright-skill`
 - Project-specific: `<project>/.claude/skills/playwright-skill`
@@ -23,9 +21,11 @@ I'll write custom Patchright code for any automation task you request and execut
 **CRITICAL WORKFLOW - Follow these steps in order:**
 
 1. **Auto-detect dev servers** - For localhost testing, ALWAYS run server detection FIRST:
+
    ```bash
    cd $SKILL_DIR && python3 -c "from lib.helpers import detect_dev_servers_sync; import json; print(json.dumps(detect_dev_servers_sync()))"
    ```
+
    - If **1 server found**: Use it automatically, inform user
    - If **multiple servers found**: Ask user which one to test
    - If **no servers found**: Ask for URL or offer to help start dev server
@@ -294,6 +294,7 @@ async def main():
         browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
 
+<<<<<<< HEAD
         try:
             await page.goto('http://localhost:3000', wait_until='networkidle', timeout=10000)
             await page.screenshot(path='/tmp/screenshot.png', full_page=True)
@@ -304,6 +305,26 @@ async def main():
             await browser.close()
 
 asyncio.run(main())
+=======
+  try {
+    await page.goto('http://localhost:3000', {
+      waitUntil: 'networkidle',
+      timeout: 10000,
+    });
+
+    await page.screenshot({
+      path: '/tmp/screenshot.png',
+      fullPage: true,
+    });
+
+    console.log('📸 Screenshot saved to /tmp/screenshot.png');
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  } finally {
+    await browser.close();
+  }
+})();
+>>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 ```
 
 ### Test Responsive Design
@@ -320,6 +341,7 @@ async def main():
         browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
 
+<<<<<<< HEAD
         viewports = [
             {'name': 'Desktop', 'width': 1920, 'height': 1080},
             {'name': 'Tablet', 'width': 768, 'height': 1024},
@@ -333,14 +355,39 @@ async def main():
                 'width': viewport['width'],
                 'height': viewport['height']
             })
+=======
+  const viewports = [
+    { name: 'Desktop', width: 1920, height: 1080 },
+    { name: 'Tablet', width: 768, height: 1024 },
+    { name: 'Mobile', width: 375, height: 667 },
+  ];
+
+  for (const viewport of viewports) {
+    console.log(
+      `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
+    );
+
+    await page.setViewportSize({
+      width: viewport.width,
+      height: viewport.height,
+    });
+>>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 
             await page.goto(TARGET_URL)
             await asyncio.sleep(1)
 
+<<<<<<< HEAD
             await page.screenshot(
                 path=f"/tmp/{viewport['name'].lower()}.png",
                 full_page=True
             )
+=======
+    await page.screenshot({
+      path: `/tmp/${viewport.name.toLowerCase()}.png`,
+      fullPage: true,
+    });
+  }
+>>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 
         print('✅ All viewports tested')
         await browser.close()
@@ -365,6 +412,7 @@ await browser.close()
 ```
 
 **When to use inline vs files:**
+
 - **Inline**: Quick one-off tasks (screenshot, check if element exists, get page title)
 - **Files**: Complex tests, responsive design checks, anything user might want to re-run
 
@@ -409,6 +457,7 @@ See `lib/helpers.py` for full list.
 ## Custom HTTP Headers
 
 Configure custom headers for all HTTP requests via environment variables. Useful for:
+
 - Identifying automated traffic to your backend
 - Getting LLM-optimized responses (e.g., plain text errors instead of styled HTML)
 - Adding authentication tokens globally
@@ -416,12 +465,14 @@ Configure custom headers for all HTTP requests via environment variables. Useful
 ### Configuration
 
 **Single header (common case):**
+
 ```bash
 PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=patchright-skill \
   cd $SKILL_DIR && python3 run.py /tmp/my-script.py
 ```
 
 **Multiple headers (JSON format):**
+
 ```bash
 PW_EXTRA_HEADERS='{"X-Automated-By":"patchright-skill","X-Debug":"true"}' \
   cd $SKILL_DIR && python3 run.py /tmp/my-script.py
@@ -439,9 +490,16 @@ page = await context.new_page()
 
 For scripts using raw Patchright API, use the injected `get_context_options_with_headers()`:
 
+<<<<<<< HEAD
 ```python
 options = get_context_options_with_headers({'viewport': {'width': 1920, 'height': 1080}})
 context = await browser.new_context(**options)
+=======
+```javascript
+const context = await browser.newContext(
+  getContextOptionsWithHeaders({ viewport: { width: 1920, height: 1080 } }),
+);
+>>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 ```
 
 ## Anti-Detection Features
@@ -488,7 +546,12 @@ For comprehensive Patchright/Playwright API documentation, see [API_REFERENCE.md
 
 ## Troubleshooting
 
+<<<<<<< HEAD
 **Patchright not installed:**
+=======
+**Playwright not installed:**
+
+>>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 ```bash
 pip install patchright
 patchright install chromium
