@@ -3,10 +3,10 @@
   "version": "4.1.0",
   "description": "Claude Code Skill for general-purpose browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp, and autonomously handles any browser automation task.",
   "author": {
-    "name": "lackeyjb"
+    "name": "lackeyjb+a5m0"
   },
   "license": "MIT",
-  "repository": "https://github.com/lackeyjb/playwright-skill",
+  "repository": "https://github.com/a5m0/playwright-skill",
   "keywords": [
     "claude-skill",
     "claude-code",
