@@ -35,15 +35,41 @@ def check_patchright_installed():
         return False
 
 
-def install_patchright():
-    """Install Patchright if missing"""
-    print("📦 Patchright not found. Installing...")
+def is_uv_available():
+    """Check if uv is available"""
     try:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "patchright"],
+            ["uv", "--version"],
             check=True,
-            cwd=SKILL_DIR
+            capture_output=True
         )
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
+def install_patchright():
+    """Install Patchright if missing. Prefers uv, falls back to pip."""
+    print("📦 Patchright not found. Installing...")
+
+    use_uv = is_uv_available()
+
+    try:
+        if use_uv:
+            print("  Using uv for installation...")
+            subprocess.run(
+                ["uv", "pip", "install", "patchright"],
+                check=True,
+                cwd=SKILL_DIR
+            )
+        else:
+            print("  Using pip for installation (uv not found)...")
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "patchright"],
+                check=True,
+                cwd=SKILL_DIR
+            )
+
         subprocess.run(
             [sys.executable, "-m", "patchright", "install", "chromium"],
             check=True,
@@ -53,7 +79,8 @@ def install_patchright():
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install Patchright: {e}")
-        print(f"Please run manually: pip install patchright && patchright install chromium")
+        installer = "uv pip" if use_uv else "pip"
+        print(f"Please run manually: {installer} install patchright && patchright install chromium")
         return False
 
 
