@@ -472,6 +472,155 @@ def detect_dev_servers_sync(custom_ports: List[int] = None) -> List[str]:
     return detected_servers
 
 
+async def extract_content(
+    page,
+    output_format: str = 'markdown',
+    include_comments: bool = False,
+    include_tables: bool = True,
+    include_links: bool = True,
+    include_images: bool = False,
+    with_metadata: bool = False,
+    url: Optional[str] = None
+) -> Optional[str]:
+    """
+    Extract main content from a page using Trafilatura.
+
+    Args:
+        page: Patchright page
+        output_format: Output format ('markdown', 'txt', 'json', 'xml', 'csv')
+        include_comments: Include comments in output
+        include_tables: Include tables in output
+        include_links: Include links in output
+        include_images: Include images in output
+        with_metadata: Include metadata in output
+        url: Optional URL for metadata (uses page.url if not provided)
+
+    Returns:
+        Extracted content as string, or None if extraction failed
+    """
+    try:
+        import trafilatura
+    except ImportError:
+        print("⚠️ Trafilatura not installed. Run: pip install trafilatura")
+        return None
+
+    try:
+        # Get HTML content from the page
+        html_content = await page.content()
+
+        # Use page URL if not provided
+        if url is None:
+            url = page.url
+
+        # Extract content using Trafilatura
+        extracted = trafilatura.extract(
+            html_content,
+            output_format=output_format,
+            url=url,
+            include_comments=include_comments,
+            include_tables=include_tables,
+            include_links=include_links,
+            include_images=include_images,
+            with_metadata=with_metadata
+        )
+
+        return extracted
+
+    except Exception as e:
+        print(f"❌ Content extraction failed: {e}")
+        return None
+
+
+async def extract_markdown(
+    page,
+    include_tables: bool = True,
+    include_links: bool = True,
+    include_images: bool = False
+) -> Optional[str]:
+    """
+    Extract page content as Markdown.
+
+    Args:
+        page: Patchright page
+        include_tables: Include tables in markdown
+        include_links: Include links in markdown
+        include_images: Include images in markdown
+
+    Returns:
+        Markdown content as string, or None if extraction failed
+    """
+    return await extract_content(
+        page,
+        output_format='markdown',
+        include_tables=include_tables,
+        include_links=include_links,
+        include_images=include_images
+    )
+
+
+async def extract_text(page, include_tables: bool = True) -> Optional[str]:
+    """
+    Extract page content as plain text.
+
+    Args:
+        page: Patchright page
+        include_tables: Include tables in text
+
+    Returns:
+        Plain text content as string, or None if extraction failed
+    """
+    return await extract_content(
+        page,
+        output_format='txt',
+        include_tables=include_tables,
+        include_links=False
+    )
+
+
+async def extract_with_metadata(
+    page,
+    output_format: str = 'json'
+) -> Optional[Dict[str, Any]]:
+    """
+    Extract page content with metadata (title, author, date, etc.).
+
+    Args:
+        page: Patchright page
+        output_format: Output format ('json', 'xml')
+
+    Returns:
+        Dictionary with content and metadata, or None if extraction failed
+    """
+    try:
+        import trafilatura
+        import json as json_lib
+    except ImportError:
+        print("⚠️ Trafilatura not installed. Run: pip install trafilatura")
+        return None
+
+    try:
+        html_content = await page.content()
+        url = page.url
+
+        extracted = trafilatura.extract(
+            html_content,
+            output_format=output_format,
+            url=url,
+            with_metadata=True,
+            include_tables=True,
+            include_links=True
+        )
+
+        if output_format == 'json' and extracted:
+            return json_lib.loads(extracted)
+        else:
+            return extracted
+
+    except Exception as e:
+        print(f"❌ Metadata extraction failed: {e}")
+        return None
+
+
 # Import proxy wrapper functions
 try:
     from .proxy_wrapper import (
@@ -526,6 +675,10 @@ __all__ = [
     'retry_with_backoff',
     'detect_dev_servers',
     'detect_dev_servers_sync',
+    'extract_content',
+    'extract_markdown',
+    'extract_text',
+    'extract_with_metadata',
     'is_claude_code_web_environment',
     'get_proxy_config',
     'get_browser_config',

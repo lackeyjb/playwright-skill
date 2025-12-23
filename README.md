@@ -13,6 +13,7 @@ Made using Claude Code.
 ## Features
 
 - **Anti-Bot Detection** - Uses Patchright to bypass Cloudflare, Akamai, DataDome, Kasada and more
+- **Content Extraction** - Extract clean markdown, text, and metadata from web pages using Trafilatura
 - **Claude Code Web Auto-Configuration** - Automatically detects and configures proxy authentication for browser-based Claude Code sessions
 - **Chrome Preference** - Uses Chrome over Chromium by default for better stealth and bot detection avoidance
 - **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
@@ -170,6 +171,13 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 ```
 "Test the checkout flow on our e-commerce site"
 "Verify the login works on the protected portal"
+```
+
+### Content Extraction
+```
+"Extract the article content from this blog post as markdown"
+"Scrape the documentation and save it as a markdown file"
+"Get the main content and metadata from this news article"
 ```
 
 ## How It Works

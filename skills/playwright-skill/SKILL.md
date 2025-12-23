@@ -454,6 +454,117 @@ data = await helpers.extract_table_data(page, 'table.results')
 
 See `lib/helpers.py` for full list.
 
+## Content Extraction with Trafilatura
+
+Extract clean, structured content from web pages using Trafilatura integration. Perfect for scraping articles, documentation, or any text-heavy content while filtering out navigation, ads, and boilerplate.
+
+### Quick Examples
+
+```python
+import sys
+sys.path.insert(0, '$SKILL_DIR')
+from lib.helpers import extract_markdown, extract_text, extract_with_metadata
+
+# Extract as Markdown (preserves formatting, links, tables)
+markdown = await extract_markdown(page)
+print(markdown)
+
+# Extract as plain text (clean text only)
+text = await extract_text(page)
+print(text)
+
+# Extract with metadata (title, author, date, etc.)
+data = await extract_with_metadata(page)
+print(f"Title: {data['title']}")
+print(f"Author: {data['author']}")
+print(f"Date: {data['date']}")
+print(f"Content: {data['text']}")
+```
+
+### Full Script Example
+
+```python
+# /tmp/patchright-extract-content.py
+import asyncio
+from patchright.async_api import async_playwright
+import sys
+sys.path.insert(0, '$SKILL_DIR')
+from lib.helpers import extract_markdown, extract_with_metadata
+
+async def main():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False)
+        page = await browser.new_page()
+
+        # Navigate to article/documentation page
+        await page.goto('https://example.com/blog/article')
+
+        # Extract as markdown
+        markdown = await extract_markdown(page, include_tables=True, include_links=True)
+
+        # Save to file
+        with open('/tmp/article.md', 'w') as f:
+            f.write(markdown)
+        print('✅ Article saved to /tmp/article.md')
+
+        # Extract with metadata
+        data = await extract_with_metadata(page)
+        print(f"Title: {data.get('title', 'N/A')}")
+        print(f"Author: {data.get('author', 'N/A')}")
+        print(f"Published: {data.get('date', 'N/A')}")
+
+        await browser.close()
+
+asyncio.run(main())
+```
+
+### Available Extraction Functions
+
+**`extract_markdown(page, include_tables=True, include_links=True, include_images=False)`**
+- Extracts content as Markdown
+- Preserves headings, lists, code blocks, tables, and links
+- Best for preserving document structure
+
+**`extract_text(page, include_tables=True)`**
+- Extracts content as plain text
+- Removes all formatting
+- Best for text analysis or search indexing
+
+**`extract_with_metadata(page, output_format='json')`**
+- Extracts content with metadata (title, author, date, description, etc.)
+- Returns dictionary with structured data
+- Best for archiving or content management
+
+**`extract_content(page, output_format='markdown', ...)`**
+- Low-level function with full control
+- Supports formats: 'markdown', 'txt', 'json', 'xml', 'csv'
+- Advanced options for comments, images, etc.
+
+### Use Cases
+
+**Documentation scraping:**
+```python
+# Extract API docs as markdown
+await page.goto('https://docs.example.com/api')
+markdown = await extract_markdown(page)
+with open('api-docs.md', 'w') as f:
+    f.write(markdown)
+```
+
+**Article archiving:**
+```python
+# Save blog post with metadata
+data = await extract_with_metadata(page)
+# Store in database or file system
+```
+
+**Content analysis:**
+```python
+# Extract clean text for NLP processing
+text = await extract_text(page)
+# Run sentiment analysis, keyword extraction, etc.
+```
+
 ## Custom HTTP Headers
 
 Configure custom headers for all HTTP requests via environment variables. Useful for:

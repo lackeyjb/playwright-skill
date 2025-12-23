@@ -21,6 +21,7 @@ keywords = [
 
 dependencies = [
     "patchright>=1.0.0",
+    "trafilatura>=2.0.0",
 ]
 
 [project.optional-dependencies]
