@@ -294,7 +294,6 @@ async def main():
         browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
 
-<<<<<<< HEAD
         try:
             await page.goto('http://localhost:3000', wait_until='networkidle', timeout=10000)
             await page.screenshot(path='/tmp/screenshot.png', full_page=True)
@@ -305,26 +304,6 @@ async def main():
             await browser.close()
 
 asyncio.run(main())
-=======
-  try {
-    await page.goto('http://localhost:3000', {
-      waitUntil: 'networkidle',
-      timeout: 10000,
-    });
-
-    await page.screenshot({
-      path: '/tmp/screenshot.png',
-      fullPage: true,
-    });
-
-    console.log('📸 Screenshot saved to /tmp/screenshot.png');
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-  } finally {
-    await browser.close();
-  }
-})();
->>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 ```
 
 ### Test Responsive Design
@@ -341,7 +320,6 @@ async def main():
         browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
 
-<<<<<<< HEAD
         viewports = [
             {'name': 'Desktop', 'width': 1920, 'height': 1080},
             {'name': 'Tablet', 'width': 768, 'height': 1024},
@@ -355,39 +333,14 @@ async def main():
                 'width': viewport['width'],
                 'height': viewport['height']
             })
-=======
-  const viewports = [
-    { name: 'Desktop', width: 1920, height: 1080 },
-    { name: 'Tablet', width: 768, height: 1024 },
-    { name: 'Mobile', width: 375, height: 667 },
-  ];
-
-  for (const viewport of viewports) {
-    console.log(
-      `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
-    );
-
-    await page.setViewportSize({
-      width: viewport.width,
-      height: viewport.height,
-    });
->>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 
             await page.goto(TARGET_URL)
             await asyncio.sleep(1)
 
-<<<<<<< HEAD
             await page.screenshot(
                 path=f"/tmp/{viewport['name'].lower()}.png",
                 full_page=True
             )
-=======
-    await page.screenshot({
-      path: `/tmp/${viewport.name.toLowerCase()}.png`,
-      fullPage: true,
-    });
-  }
->>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 
         print('✅ All viewports tested')
         await browser.close()
@@ -601,16 +554,9 @@ page = await context.new_page()
 
 For scripts using raw Patchright API, use the injected `get_context_options_with_headers()`:
 
-<<<<<<< HEAD
 ```python
 options = get_context_options_with_headers({'viewport': {'width': 1920, 'height': 1080}})
 context = await browser.new_context(**options)
-=======
-```javascript
-const context = await browser.newContext(
-  getContextOptionsWithHeaders({ viewport: { width: 1920, height: 1080 } }),
-);
->>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 ```
 
 ## Anti-Detection Features
@@ -657,12 +603,7 @@ For comprehensive Patchright/Playwright API documentation, see [API_REFERENCE.md
 
 ## Troubleshooting
 
-<<<<<<< HEAD
 **Patchright not installed:**
-=======
-**Playwright not installed:**
-
->>>>>>> bb7e920 (docs: relocate API reference and align with Agent Skills spec (#22))
 ```bash
 pip install patchright
 patchright install chromium
