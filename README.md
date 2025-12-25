@@ -11,11 +11,13 @@ Made using Claude Code.
 ## Features
 
 - **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
-- **Visible Browser by Default** - See automation in real-time with `headless: false`
+- **Visible Browser by Default** - See automation in real-time with `headless=False`
 - **Zero Module Resolution Errors** - Universal executor ensures proper module access
 - **Progressive Disclosure** - Concise SKILL.md with full API reference loaded only when needed
 - **Safe Cleanup** - Smart temp file management without race conditions
 - **Comprehensive Helpers** - Optional utility functions for common tasks
+- **PEP 723 Metadata** - All scripts include inline dependency specifications
+- **Always Uses Playwright 1.54.0** - Exact version pinned for consistency
 
 ## Installation
 
@@ -35,6 +37,14 @@ playwright-skill/              # Plugin root
 
 Claude Code expects skills to be directly in folders under `.claude/skills/`, so manual installation requires extracting the nested skill folder.
 
+### Prerequisites
+
+- Python 3.10 or later (required for PEP 723 support)
+- Chromium browser (correct version for Playwright 1.54.0) - must be installed separately
+- `uv` package manager (for running scripts with PEP 723 metadata)
+
+**Note:** This skill does NOT install browsers. Chromium must be installed separately at the correct version for Playwright 1.54.0.
+
 ---
 
 ### Option 1: Plugin Installation (Recommended)
@@ -48,9 +58,9 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
 
-# Navigate to the skill directory and run setup
+# Verify installation (auto-installs playwright==1.54.0)
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
-npm run setup
+uv run run.py --help
 ```
 
 Verify installation by running `/help` to confirm the skill is available.
@@ -71,9 +81,9 @@ git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill
 mkdir -p ~/.claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
-# Navigate to the skill and run setup
+# Navigate to the skill and run setup (auto-installs playwright==1.54.0)
 cd ~/.claude/skills/playwright-skill
-npm run setup
+uv run run.py --help
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -89,9 +99,9 @@ git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill
 mkdir -p .claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 
-# Navigate to the skill and run setup
+# Navigate to the skill and run setup (auto-installs playwright==1.54.0)
 cd .claude/skills/playwright-skill
-npm run setup
+uv run run.py --help
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -110,7 +120,7 @@ rm -rf /tmp/playwright-skill-temp
 3. Navigate to the skill directory and run setup:
    ```bash
    cd ~/.claude/skills/playwright-skill  # or your project path
-   npm run setup
+   uv run run.py --help
    ```
 
 ---
@@ -160,7 +170,7 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 
 1. Describe what you want to test or automate
 2. Claude writes custom Playwright code for the task
-3. The universal executor (run.js) runs it with proper module resolution
+3. The universal executor (run.py) runs it with proper module resolution
 4. Browser opens (visible by default) and automation executes
 5. Results are displayed with console output and screenshots
 
@@ -168,10 +178,11 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 
 Default settings:
 
-- **Headless:** `false` (browser visible unless explicitly requested otherwise)
+- **Headless:** `False` (browser visible unless explicitly requested otherwise)
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
 - **Screenshots:** Saved to `/tmp/`
+- **Playwright Version:** Always `1.54.0` (exact version)
 
 ## Project Structure
 
@@ -183,10 +194,9 @@ playwright-skill/
 ├── skills/
 │   └── playwright-skill/    # The actual skill (Claude discovers this)
 │       ├── SKILL.md         # What Claude reads
-│       ├── run.js           # Universal executor (proper module resolution)
-│       ├── package.json     # Dependencies & setup scripts
-│       └── lib/
-│           └── helpers.js   # Optional utility functions
+│       ├── run.py           # Universal executor (proper module resolution)
+│       ├── lib/
+│       │   └── helpers.py   # Optional utility functions
 │       └── API_REFERENCE.md # Full Playwright API reference
 ├── README.md                # This file - user documentation
 ├── CONTRIBUTING.md          # Contribution guidelines
@@ -199,23 +209,45 @@ Claude will automatically load `API_REFERENCE.md` when needed for comprehensive 
 
 ## Dependencies
 
-- Node.js
-- Playwright (installed via `npm run setup`)
-- Chromium (installed via `npm run setup`)
+- Python 3.10+ (required for PEP 723 support)
+- `uv` package manager (for running scripts with PEP 723 metadata)
+- Playwright 1.54.0 (auto-installed via PEP 723 when running scripts)
+- Chromium browser (must be installed separately at correct version)
+
+## Execution Pattern
+
+All scripts include PEP 723 metadata blocks:
+
+```python
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+#     "aiohttp>=3.9.0",
+# ]
+# ///
+
+# Your Playwright code here...
+```
+
+When you run `uv run script.py`, it automatically installs the exact dependencies specified in the PEP 723 block.
 
 ## Troubleshooting
 
 **Playwright not installed?**
-Navigate to the skill directory and run `npm run setup`.
+Navigate to the skill directory and run `uv run run.py --help` (auto-installs via PEP 723).
 
 **Module not found errors?**
-Ensure automation runs via `run.js`, which handles module resolution.
+Ensure automation runs via `run.py`, which handles module resolution.
 
 **Browser doesn't open?**
-Verify `headless: false` is set. The skill defaults to visible browser unless headless mode is requested.
+Verify `headless=False` is set. The skill defaults to visible browser unless headless mode is requested.
+
+**Wrong Chromium version?**
+Install the correct Chromium version for Playwright 1.54.0 separately. The skill does not install browsers.
 
 **Install all browsers?**
-Run `npm run install-all-browsers` from the skill directory.
+Install additional browsers (firefox, webkit) separately if needed. The skill assumes Chromium is already installed.
 
 ## What is a Skill?
 
