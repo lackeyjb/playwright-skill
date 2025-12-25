@@ -24,8 +24,8 @@ Enhancement suggestions are welcome! Please:
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/lackeyjb/playwright-skill.git
-   cd playwright-skill
+   git clone https://github.com/akaihola/playwright-py-skill.git
+   cd playwright-py-skill
    ```
 
 2. **Create a feature branch**
@@ -98,7 +98,7 @@ docs: update installation instructions
 ### File Structure
 
 ```
-playwright-skill/
+playwright-py-skill/
 ├── SKILL.md           # Keep concise (~300 lines)
 ├── README.md          # Full API reference
 ├── PLUGIN_README.md   # Plugin distribution docs

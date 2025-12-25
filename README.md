@@ -28,10 +28,10 @@ This repository is structured as a [Claude Code Plugin](https://docs.claude.com/
 This repository uses the plugin format with a nested structure:
 
 ```
-playwright-skill/              # Plugin root
+playwright-py-skill/              # Plugin root
 ├── .claude-plugin/           # Plugin metadata
 └── skills/
-    └── playwright-skill/     # The actual skill
+    └── playwright-py-skill/     # The actual skill
         └── SKILL.md
 ```
 
@@ -53,13 +53,13 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 
 ```bash
 # Add this repository as a marketplace
-/plugin marketplace add lackeyjb/playwright-skill
+/plugin marketplace add akaihola/playwright-py-skill
 
 # Install the plugin
-/plugin install playwright-skill@playwright-skill
+/plugin install playwright-py-skill@playwright-py-skill
 
 # Verify installation (auto-installs playwright==1.56.0)
-cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
+cd ~/.claude/plugins/marketplaces/playwright-py-skill/skills/playwright-py-skill
 uv run run.py --help
 ```
 
@@ -75,51 +75,51 @@ To install as a standalone skill (without the plugin system), extract only the s
 
 ```bash
 # Clone to a temporary location
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/akaihola/playwright-py-skill.git /tmp/playwright-py-skill-temp
 
 # Copy only the skill folder to your global skills directory
 mkdir -p ~/.claude/skills
-cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
+cp -r /tmp/playwright-py-skill-temp/skills/playwright-py-skill ~/.claude/skills/
 
 # Navigate to the skill and run setup (auto-installs playwright==1.56.0)
-cd ~/.claude/skills/playwright-skill
+cd ~/.claude/skills/playwright-py-skill
 uv run run.py --help
 
 # Clean up temporary files
-rm -rf /tmp/playwright-skill-temp
+rm -rf /tmp/playwright-py-skill-temp
 ```
 
 **Project-Specific Installation:**
 
 ```bash
 # Clone to a temporary location
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/akaihola/playwright-py-skill.git /tmp/playwright-py-skill-temp
 
 # Copy only the skill folder to your project
 mkdir -p .claude/skills
-cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
+cp -r /tmp/playwright-py-skill-temp/skills/playwright-py-skill .claude/skills/
 
 # Navigate to the skill and run setup (auto-installs playwright==1.56.0)
-cd .claude/skills/playwright-skill
+cd .claude/skills/playwright-py-skill
 uv run run.py --help
 
 # Clean up temporary files
-rm -rf /tmp/playwright-skill-temp
+rm -rf /tmp/playwright-py-skill-temp
 ```
 
-**Why this structure?** The plugin format requires the `skills/` directory for organizing multiple skills within a plugin. When installing as a standalone skill, you only need the inner `skills/playwright-skill/` folder contents.
+**Why this structure?** The plugin format requires the `skills/` directory for organizing multiple skills within a plugin. When installing as a standalone skill, you only need the inner `skills/playwright-py-skill/` folder contents.
 
 ---
 
 ### Option 3: Download Release
 
-1. Download and extract the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
-2. Copy only the `skills/playwright-skill/` folder to:
-   - Global: `~/.claude/skills/playwright-skill`
-   - Project: `/path/to/your/project/.claude/skills/playwright-skill`
+1. Download and extract the latest release from [GitHub Releases](https://github.com/akaihola/playwright-py-skill/releases)
+2. Copy only the `skills/playwright-py-skill/` folder to:
+   - Global: `~/.claude/skills/playwright-py-skill`
+   - Project: `/path/to/your/project/.claude/skills/playwright-py-skill`
 3. Navigate to the skill directory and run setup:
    ```bash
-   cd ~/.claude/skills/playwright-skill  # or your project path
+   cd ~/.claude/skills/playwright-py-skill  # or your project path
    uv run run.py --help
    ```
 
@@ -187,12 +187,12 @@ Default settings:
 ## Project Structure
 
 ```
-playwright-skill/
+playwright-py-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # Plugin metadata for distribution
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
-│   └── playwright-skill/    # The actual skill (Claude discovers this)
+│   └── playwright-py-skill/    # The actual skill (Claude discovers this)
 │       ├── SKILL.md         # What Claude reads
 │       ├── run.py           # Universal executor (proper module resolution)
 │       ├── lib/
@@ -265,8 +265,8 @@ Contributions are welcome. Fork the repository, create a feature branch, make yo
 - [Claude Code Skills Documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
 - [Plugin Marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
-- [API_REFERENCE.md](skills/playwright-skill/API_REFERENCE.md) - Full Playwright documentation
-- [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
+- [API_REFERENCE.md](skills/playwright-py-skill/API_REFERENCE.md) - Full Playwright documentation
+- [GitHub Issues](https://github.com/akaihola/playwright-py-skill/issues)
 
 ## License
 

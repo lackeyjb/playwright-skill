@@ -1,5 +1,5 @@
 ---
-name: playwright-skill
+name: playwright-py-skill
 description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
 ---
 
@@ -8,9 +8,9 @@ This skill can be installed in different locations (plugin system, manual instal
 
 Common installation paths:
 
-- Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
-- Manual global: `~/.claude/skills/playwright-skill`
-- Project-specific: `<project>/.claude/skills/playwright-skill`
+- Plugin system: `~/.claude/plugins/marketplaces/playwright-py-skill/skills/playwright-py-skill`
+- Manual global: `~/.claude/skills/playwright-py-skill`
+- Project-specific: `<project>/.claude/skills/playwright-py-skill`
 
 # Playwright Browser Automation
 
@@ -363,14 +363,14 @@ Configure custom headers for all HTTP requests via environment variables. Useful
 **Single header (common case):**
 
 ```bash
-PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill \
+PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-py-skill \
   cd $SKILL_DIR && uv run run.py /tmp/my-script.py
 ```
 
 **Multiple headers (JSON format):**
 
 ```bash
-PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Debug":"true"}' \
+PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-py-skill","X-Debug":"true"}' \
   cd $SKILL_DIR && uv run run.py /tmp/my-script.py
 ```
 

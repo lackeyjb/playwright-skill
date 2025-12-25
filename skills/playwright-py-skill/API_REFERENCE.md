@@ -36,7 +36,7 @@ Before using this skill, ensure Playwright is available:
 python -c "import playwright; print('Playwright installed')" 2>/dev/null || echo "Playwright not installed"
 
 # Run setup (auto-installs playwright==1.56.0 via PEP 723)
-cd ~/.claude/skills/playwright-skill
+cd ~/.claude/skills/playwright-py-skill
 uv run run.py --help
 ```
 
@@ -386,10 +386,10 @@ The skill supports automatic header injection via environment variables:
 
 ```bash
 # Single header (simple)
-PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill
+PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-py-skill
 
 # Multiple headers (JSON)
-PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Request-ID":"123"}'
+PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-py-skill","X-Request-ID":"123"}'
 ```
 
 These headers are automatically applied to all requests when using:
