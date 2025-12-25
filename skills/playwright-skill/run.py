@@ -89,12 +89,14 @@ def cleanup_old_temp_files():
 
 def wrap_code_if_needed(code):
     """Wrap code in async function if not already wrapped."""
-    # Check if code already has imports and async structure
+    # Check if code already has PEP 723 metadata or proper Python structure
+    has_pep723 = "# ///" in code and "script" in code.lower()
     has_import = "from playwright" in code or "import playwright" in code
-    has_async_def = "async def " in code or "def main()" in code
+    has_sync_playwright = "sync_playwright()" in code
+    has_main = "def main():" in code or "if __name__" in code
 
-    # If it's already a complete script, return as-is
-    if has_import and has_async_def:
+    # If it's already a complete script (PEP 723 or has sync_playwright), return as-is
+    if has_pep723 or (has_import and (has_sync_playwright or has_main)):
         return code
 
     # If it's just Playwright commands, wrap in full template
@@ -127,15 +129,12 @@ if __name__ == "__main__":
 '''
 
     # If has import but no main function
-    if not has_async_def:
-        return f"""def main():
+    return f"""def main():
     {code}
 
 if __name__ == "__main__":
     main()
 """
-
-    return code
 
 
 async def detect_dev_servers(custom_ports=None):
