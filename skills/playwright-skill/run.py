@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "playwright==1.54.0",
+#     "playwright==1.56.0",
 #     "aiohttp>=3.9.0",
 # ]
 # ///

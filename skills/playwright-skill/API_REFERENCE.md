@@ -35,7 +35,7 @@ Before using this skill, ensure Playwright is available:
 # Check if Playwright is installed
 python -c "import playwright; print('Playwright installed')" 2>/dev/null || echo "Playwright not installed"
 
-# Run setup (auto-installs playwright==1.54.0 via PEP 723)
+# Run setup (auto-installs playwright==1.56.0 via PEP 723)
 cd ~/.claude/skills/playwright-skill
 uv run run.py --help
 ```
@@ -530,7 +530,7 @@ jobs:
           python-version: '3.10'
       - name: Install dependencies
         run: |
-          pip install playwright==1.54.0
+          pip install playwright==1.56.0
       - name: Run tests
         run: python -m playwright test
 ```

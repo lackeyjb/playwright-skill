@@ -17,7 +17,7 @@ Made using Claude Code.
 - **Safe Cleanup** - Smart temp file management without race conditions
 - **Comprehensive Helpers** - Optional utility functions for common tasks
 - **PEP 723 Metadata** - All scripts include inline dependency specifications
-- **Always Uses Playwright 1.54.0** - Exact version pinned for consistency
+- **Always Uses Playwright 1.56.0** - Exact version pinned for consistency
 
 ## Installation
 
@@ -40,10 +40,10 @@ Claude Code expects skills to be directly in folders under `.claude/skills/`, so
 ### Prerequisites
 
 - Python 3.10 or later (required for PEP 723 support)
-- Chromium browser (correct version for Playwright 1.54.0) - must be installed separately
+- Chromium browser (correct version for Playwright 1.56.0) - must be installed separately
 - `uv` package manager (for running scripts with PEP 723 metadata)
 
-**Note:** This skill does NOT install browsers. Chromium must be installed separately at the correct version for Playwright 1.54.0.
+**Note:** This skill does NOT install browsers. Chromium must be installed separately at the correct version for Playwright 1.56.0.
 
 ---
 
@@ -58,7 +58,7 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
 
-# Verify installation (auto-installs playwright==1.54.0)
+# Verify installation (auto-installs playwright==1.56.0)
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 uv run run.py --help
 ```
@@ -81,7 +81,7 @@ git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill
 mkdir -p ~/.claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
-# Navigate to the skill and run setup (auto-installs playwright==1.54.0)
+# Navigate to the skill and run setup (auto-installs playwright==1.56.0)
 cd ~/.claude/skills/playwright-skill
 uv run run.py --help
 
@@ -99,7 +99,7 @@ git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill
 mkdir -p .claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 
-# Navigate to the skill and run setup (auto-installs playwright==1.54.0)
+# Navigate to the skill and run setup (auto-installs playwright==1.56.0)
 cd .claude/skills/playwright-skill
 uv run run.py --help
 
@@ -182,7 +182,7 @@ Default settings:
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
 - **Screenshots:** Saved to `/tmp/`
-- **Playwright Version:** Always `1.54.0` (exact version)
+- **Playwright Version:** Always `1.56.0` (exact version)
 
 ## Project Structure
 
@@ -211,7 +211,7 @@ Claude will automatically load `API_REFERENCE.md` when needed for comprehensive 
 
 - Python 3.10+ (required for PEP 723 support)
 - `uv` package manager (for running scripts with PEP 723 metadata)
-- Playwright 1.54.0 (auto-installed via PEP 723 when running scripts)
+- Playwright 1.56.0 (auto-installed via PEP 723 when running scripts)
 - Chromium browser (must be installed separately at correct version)
 
 ## Execution Pattern
@@ -222,7 +222,7 @@ All scripts include PEP 723 metadata blocks:
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "playwright==1.54.0",
+#     "playwright==1.56.0",
 #     "aiohttp>=3.9.0",
 # ]
 # ///
@@ -244,7 +244,7 @@ Ensure automation runs via `run.py`, which handles module resolution.
 Verify `headless=False` is set. The skill defaults to visible browser unless headless mode is requested.
 
 **Wrong Chromium version?**
-Install the correct Chromium version for Playwright 1.54.0 separately. The skill does not install browsers.
+Install the correct Chromium version for Playwright 1.56.0 separately. The skill does not install browsers.
 
 **Install all browsers?**
 Install additional browsers (firefox, webkit) separately if needed. The skill assumes Chromium is already installed.
