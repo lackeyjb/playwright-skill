@@ -21,16 +21,16 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 1. **Auto-detect dev servers** - For localhost testing, ALWAYS run server detection FIRST:
 
    ```bash
-   cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(servers => console.log(JSON.stringify(servers)))"
+   cd $SKILL_DIR && uv run python -c "from lib.helpers import detect_dev_servers; import asyncio, json; print(json.dumps(asyncio.run(detect_dev_servers())))"
    ```
 
    - If **1 server found**: Use it automatically, inform user
    - If **multiple servers found**: Ask user which one to test
    - If **no servers found**: Ask for URL or offer to help start dev server
 
-2. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.js`
+2. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.py`
 
-3. **Use visible browser by default** - Always use `headless: false` unless user specifically requests headless mode
+3. **Use visible browser by default** - Always use `headless=False` unless user specifically requests headless mode
 
 4. **Parameterize URLs** - Always make URLs configurable via environment variable or constant at top of script
 
@@ -38,8 +38,8 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 
 1. You describe what you want to test/automate
 2. I auto-detect running dev servers (or ask for URL if testing external site)
-3. I write custom Playwright code in `/tmp/playwright-test-*.js` (won't clutter your project)
-4. I execute it via: `cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js`
+3. I write custom Playwright code in `/tmp/playwright-test-*.py` (won't clutter your project)
+4. I execute it via: `cd $SKILL_DIR && uv run run.py /tmp/playwright-test-*.py`
 5. Results displayed in real-time, browser window visible for debugging
 6. Test files auto-cleaned from /tmp by your OS
 
@@ -47,233 +47,256 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 
 ```bash
 cd $SKILL_DIR
-npm run setup
+uv run run.py --help
 ```
 
-This installs Playwright and Chromium browser. Only needed once.
+This will automatically install Playwright via PEP 723 metadata. Chromium browser must already be installed (correct version for Playwright 1.54.0).
 
 ## Execution Pattern
 
 **Step 1: Detect dev servers (for localhost testing)**
 
 ```bash
-cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
+cd $SKILL_DIR && uv run python -c "from lib.helpers import detect_dev_servers; import asyncio, json; print(json.dumps(asyncio.run(detect_dev_servers())))"
 ```
 
 **Step 2: Write test script to /tmp with URL parameter**
 
-```javascript
-// /tmp/playwright-test-page.js
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+# /tmp/playwright-test-page.py
+from playwright.sync_api import sync_playwright
 
-// Parameterized URL (detected or user-provided)
-const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
+# Parameterized URL (detected or user-provided)
+TARGET_URL = 'http://localhost:3001'  # <-- Auto-detected or from user
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)
+    page = browser.new_page()
 
-  await page.goto(TARGET_URL);
-  console.log('Page loaded:', await page.title());
+    page.goto(TARGET_URL)
+    print('Page loaded:', page.title())
 
-  await page.screenshot({ path: '/tmp/screenshot.png', fullPage: true });
-  console.log('📸 Screenshot saved to /tmp/screenshot.png');
+    page.screenshot(path='/tmp/screenshot.png', full_page=True)
+    print('📸 Screenshot saved to /tmp/screenshot.png')
 
-  await browser.close();
-})();
+    browser.close()
 ```
 
 **Step 3: Execute from skill directory**
 
 ```bash
-cd $SKILL_DIR && node run.js /tmp/playwright-test-page.js
+cd $SKILL_DIR && uv run run.py /tmp/playwright-test-page.py
 ```
 
 ## Common Patterns
 
 ### Test a Page (Multiple Viewports)
 
-```javascript
-// /tmp/playwright-test-responsive.js
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+# /tmp/playwright-test-responsive.py
+from playwright.sync_api import sync_playwright
 
-const TARGET_URL = 'http://localhost:3001'; // Auto-detected
+TARGET_URL = 'http://localhost:3001'  # Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 100 });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False, slow_mo=100)
+    page = browser.new_page()
 
-  // Desktop test
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto(TARGET_URL);
-  console.log('Desktop - Title:', await page.title());
-  await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
+    # Desktop test
+    page.set_viewport_size({'width': 1920, 'height': 1080})
+    page.goto(TARGET_URL)
+    print('Desktop - Title:', page.title())
+    page.screenshot(path='/tmp/desktop.png', full_page=True)
 
-  // Mobile test
-  await page.setViewportSize({ width: 375, height: 667 });
-  await page.screenshot({ path: '/tmp/mobile.png', fullPage: true });
+    # Mobile test
+    page.set_viewport_size({'width': 375, 'height': 667})
+    page.screenshot(path='/tmp/mobile.png', full_page=True)
 
-  await browser.close();
-})();
+    browser.close()
 ```
 
 ### Test Login Flow
 
-```javascript
-// /tmp/playwright-test-login.js
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+# /tmp/playwright-test-login.py
+from playwright.sync_api import sync_playwright
 
-const TARGET_URL = 'http://localhost:3001'; // Auto-detected
+TARGET_URL = 'http://localhost:3001'  # Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)
+    page = browser.new_page()
 
-  await page.goto(`${TARGET_URL}/login`);
+    page.goto(f'{TARGET_URL}/login')
 
-  await page.fill('input[name="email"]', 'test@example.com');
-  await page.fill('input[name="password"]', 'password123');
-  await page.click('button[type="submit"]');
+    page.fill('input[name="email"]', 'test@example.com')
+    page.fill('input[name="password"]', 'password123')
+    page.click('button[type="submit"]')
 
-  // Wait for redirect
-  await page.waitForURL('**/dashboard');
-  console.log('✅ Login successful, redirected to dashboard');
+    # Wait for redirect
+    page.wait_for_url('**/dashboard')
+    print('✅ Login successful, redirected to dashboard')
 
-  await browser.close();
-})();
+    browser.close()
 ```
 
 ### Fill and Submit Form
 
-```javascript
-// /tmp/playwright-test-form.js
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+# /tmp/playwright-test-form.py
+from playwright.sync_api import sync_playwright
 
-const TARGET_URL = 'http://localhost:3001'; // Auto-detected
+TARGET_URL = 'http://localhost:3001'  # Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 50 });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False, slow_mo=50)
+    page = browser.new_page()
 
-  await page.goto(`${TARGET_URL}/contact`);
+    page.goto(f'{TARGET_URL}/contact')
 
-  await page.fill('input[name="name"]', 'John Doe');
-  await page.fill('input[name="email"]', 'john@example.com');
-  await page.fill('textarea[name="message"]', 'Test message');
-  await page.click('button[type="submit"]');
+    page.fill('input[name="name"]', 'John Doe')
+    page.fill('input[name="email"]', 'john@example.com')
+    page.fill('textarea[name="message"]', 'Test message')
+    page.click('button[type="submit"]')
 
-  // Verify submission
-  await page.waitForSelector('.success-message');
-  console.log('✅ Form submitted successfully');
+    # Verify submission
+    page.wait_for_selector('.success-message')
+    print('✅ Form submitted successfully')
 
-  await browser.close();
-})();
+    browser.close()
 ```
 
 ### Check for Broken Links
 
-```javascript
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+from playwright.sync_api import sync_playwright
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)
+    page = browser.new_page()
 
-  await page.goto('http://localhost:3000');
+    page.goto('http://localhost:3000')
 
-  const links = await page.locator('a[href^="http"]').all();
-  const results = { working: 0, broken: [] };
+    links = page.locator('a[href^="http"]').all()
+    results = {'working': 0, 'broken': []}
 
-  for (const link of links) {
-    const href = await link.getAttribute('href');
-    try {
-      const response = await page.request.head(href);
-      if (response.ok()) {
-        results.working++;
-      } else {
-        results.broken.push({ url: href, status: response.status() });
-      }
-    } catch (e) {
-      results.broken.push({ url: href, error: e.message });
-    }
-  }
+    for link in links:
+        href = link.get_attribute('href')
+        try:
+            response = page.request.head(href)
+            if response.ok:
+                results['working'] += 1
+            else:
+                results['broken'].append({'url': href, 'status': response.status})
+        except Exception as e:
+            results['broken'].append({'url': href, 'error': str(e)})
 
-  console.log(`✅ Working links: ${results.working}`);
-  console.log(`❌ Broken links:`, results.broken);
+    print(f'✅ Working links: {results["working"]}')
+    print(f'❌ Broken links:', results['broken'])
 
-  await browser.close();
-})();
+    browser.close()
 ```
 
 ### Take Screenshot with Error Handling
 
-```javascript
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+from playwright.sync_api import sync_playwright
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)
+    page = browser.new_page()
 
-  try {
-    await page.goto('http://localhost:3000', {
-      waitUntil: 'networkidle',
-      timeout: 10000,
-    });
+    try:
+        page.goto('http://localhost:3000', wait_until='networkidle', timeout=10000)
 
-    await page.screenshot({
-      path: '/tmp/screenshot.png',
-      fullPage: true,
-    });
+        page.screenshot(path='/tmp/screenshot.png', full_page=True)
 
-    console.log('📸 Screenshot saved to /tmp/screenshot.png');
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-  } finally {
-    await browser.close();
-  }
-})();
+        print('📸 Screenshot saved to /tmp/screenshot.png')
+    except Exception as error:
+        print(f'❌ Error: {error}')
+    finally:
+        browser.close()
 ```
 
 ### Test Responsive Design
 
-```javascript
-// /tmp/playwright-test-responsive-full.js
-const { chromium } = require('playwright');
+```python
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "playwright==1.54.0",
+# ]
+# ///
+# /tmp/playwright-test-responsive-full.py
+from playwright.sync_api import sync_playwright
 
-const TARGET_URL = 'http://localhost:3001'; // Auto-detected
+TARGET_URL = 'http://localhost:3001'  # Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)
+    page = browser.new_page()
 
-  const viewports = [
-    { name: 'Desktop', width: 1920, height: 1080 },
-    { name: 'Tablet', width: 768, height: 1024 },
-    { name: 'Mobile', width: 375, height: 667 },
-  ];
+    viewports = [
+        {'name': 'Desktop', 'width': 1920, 'height': 1080},
+        {'name': 'Tablet', 'width': 768, 'height': 1024},
+        {'name': 'Mobile', 'width': 375, 'height': 667},
+    ]
 
-  for (const viewport of viewports) {
-    console.log(
-      `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
-    );
+    for viewport in viewports:
+        print(f'Testing {viewport["name"]} ({viewport["width"]}x{viewport["height"]})')
 
-    await page.setViewportSize({
-      width: viewport.width,
-      height: viewport.height,
-    });
+        page.set_viewport_size({'width': viewport['width'], 'height': viewport['height']})
 
-    await page.goto(TARGET_URL);
-    await page.waitForTimeout(1000);
+        page.goto(TARGET_URL)
+        page.wait_for_timeout(1000)
 
-    await page.screenshot({
-      path: `/tmp/${viewport.name.toLowerCase()}.png`,
-      fullPage: true,
-    });
-  }
+        page.screenshot(path=f'/tmp/{viewport["name"].lower()}.png', full_page=True)
 
-  console.log('✅ All viewports tested');
-  await browser.close();
-})();
+    print('✅ All viewports tested')
+    browser.close()
 ```
 
 ## Inline Execution (Simple Tasks)
@@ -282,13 +305,14 @@ For quick one-off tasks, you can execute code inline without creating files:
 
 ```bash
 # Take a quick screenshot
-cd $SKILL_DIR && node run.js "
-const browser = await chromium.launch({ headless: false });
-const page = await browser.newPage();
-await page.goto('http://localhost:3001');
-await page.screenshot({ path: '/tmp/quick-screenshot.png', fullPage: true });
-console.log('Screenshot saved');
-await browser.close();
+cd $SKILL_DIR && uv run run.py "
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)
+    page = browser.new_page()
+    page.goto('http://localhost:3001')
+    page.screenshot(path='/tmp/quick-screenshot.png', full_page=True)
+    print('Screenshot saved')
+    browser.close()
 "
 ```
 
@@ -299,32 +323,32 @@ await browser.close();
 
 ## Available Helpers
 
-Optional utility functions in `lib/helpers.js`:
+Optional utility functions in `lib/helpers.py`:
 
-```javascript
-const helpers = require('./lib/helpers');
+```python
+from lib.helpers import *
 
-// Detect running dev servers (CRITICAL - use this first!)
-const servers = await helpers.detectDevServers();
-console.log('Found servers:', servers);
+# Detect running dev servers (CRITICAL - use this first!)
+servers = await detect_dev_servers()
+print('Found servers:', servers)
 
-// Safe click with retry
-await helpers.safeClick(page, 'button.submit', { retries: 3 });
+# Safe click with retry
+safe_click(page, 'button.submit', retries=3)
 
-// Safe type with clear
-await helpers.safeType(page, '#username', 'testuser');
+# Safe type with clear
+safe_type(page, '#username', 'testuser')
 
-// Take timestamped screenshot
-await helpers.takeScreenshot(page, 'test-result');
+# Take timestamped screenshot
+take_screenshot(page, 'test-result')
 
-// Handle cookie banners
-await helpers.handleCookieBanner(page);
+# Handle cookie banners
+handle_cookie_banner(page)
 
-// Extract table data
-const data = await helpers.extractTableData(page, 'table.results');
+# Extract table data
+data = extract_table_data(page, 'table.results')
 ```
 
-See `lib/helpers.js` for full list.
+See `lib/helpers.py` for full list.
 
 ## Custom HTTP Headers
 
@@ -340,32 +364,32 @@ Configure custom headers for all HTTP requests via environment variables. Useful
 
 ```bash
 PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill \
-  cd $SKILL_DIR && node run.js /tmp/my-script.js
+  cd $SKILL_DIR && uv run run.py /tmp/my-script.py
 ```
 
 **Multiple headers (JSON format):**
 
 ```bash
 PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Debug":"true"}' \
-  cd $SKILL_DIR && node run.js /tmp/my-script.js
+  cd $SKILL_DIR && uv run run.py /tmp/my-script.py
 ```
 
 ### How It Works
 
-Headers are automatically applied when using `helpers.createContext()`:
+Headers are automatically applied when using `create_context()`:
 
-```javascript
-const context = await helpers.createContext(browser);
-const page = await context.newPage();
-// All requests from this page include your custom headers
+```python
+context = create_context(browser)
+page = context.new_page()
+# All requests from this page include your custom headers
 ```
 
-For scripts using raw Playwright API, use the injected `getContextOptionsWithHeaders()`:
+For scripts using raw Playwright API, use the `get_context_options_with_headers()`:
 
-```javascript
-const context = await browser.newContext(
-  getContextOptionsWithHeaders({ viewport: { width: 1920, height: 1080 } }),
-);
+```python
+context = browser.new_context(
+    get_context_options_with_headers({'viewport': {'width': 1920, 'height': 1080}})
+)
 ```
 
 ## Advanced Usage
@@ -383,33 +407,34 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 
 ## Tips
 
-- **CRITICAL: Detect servers FIRST** - Always run `detectDevServers()` before writing test code for localhost testing
+- **CRITICAL: Detect servers FIRST** - Always run `detect_dev_servers()` before writing test code for localhost testing
 - **Custom headers** - Use `PW_HEADER_NAME`/`PW_HEADER_VALUE` env vars to identify automated traffic to your backend
-- **Use /tmp for test files** - Write to `/tmp/playwright-test-*.js`, never to skill directory or user's project
+- **Use /tmp for test files** - Write to `/tmp/playwright-test-*.py`, never to skill directory or user's project
 - **Parameterize URLs** - Put detected/provided URL in a `TARGET_URL` constant at the top of every script
-- **DEFAULT: Visible browser** - Always use `headless: false` unless user explicitly asks for headless mode
-- **Headless mode** - Only use `headless: true` when user specifically requests "headless" or "background" execution
-- **Slow down:** Use `slowMo: 100` to make actions visible and easier to follow
-- **Wait strategies:** Use `waitForURL`, `waitForSelector`, `waitForLoadState` instead of fixed timeouts
+- **DEFAULT: Visible browser** - Always use `headless=False` unless user explicitly asks for headless mode
+- **Headless mode** - Only use `headless=True` when user specifically requests "headless" or "background" execution
+- **Slow down:** Use `slow_mo=100` to make actions visible and easier to follow
+- **Wait strategies:** Use `wait_for_url`, `wait_for_selector`, `wait_for_load_state` instead of fixed timeouts
 - **Error handling:** Always use try-catch for robust automation
-- **Console output:** Use `console.log()` to track progress and show what's happening
+- **Console output:** Use `print()` to track progress and show what's happening
 
 ## Troubleshooting
 
 **Playwright not installed:**
 
 ```bash
-cd $SKILL_DIR && npm run setup
+cd $SKILL_DIR && uv run run.py --help
+# This will auto-install playwright==1.54.0 via PEP 723
 ```
 
 **Module not found:**
-Ensure running from skill directory via `run.js` wrapper
+Ensure running from skill directory via `run.py` wrapper
 
 **Browser doesn't open:**
-Check `headless: false` and ensure display available
+Check `headless=False` and ensure display available
 
 **Element not found:**
-Add wait: `await page.waitForSelector('.element', { timeout: 10000 })`
+Add wait: `page.wait_for_selector('.element', timeout=10000)`
 
 ## Example Usage
 
@@ -417,12 +442,12 @@ Add wait: `await page.waitForSelector('.element', { timeout: 10000 })`
 User: "Test if the marketing page looks good"
 
 Claude: I'll test the marketing page across multiple viewports. Let me first detect running servers...
-[Runs: detectDevServers()]
+[Runs: detect_dev_servers()]
 [Output: Found server on port 3001]
 I found your dev server running on http://localhost:3001
 
-[Writes custom automation script to /tmp/playwright-test-marketing.js with URL parameterized]
-[Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-marketing.js]
+[Writes custom automation script to /tmp/playwright-test-marketing.py with URL parameterized]
+[Runs: cd $SKILL_DIR && uv run run.py /tmp/playwright-test-marketing.py]
 [Shows results with screenshots from /tmp/]
 ```
 
@@ -430,7 +455,7 @@ I found your dev server running on http://localhost:3001
 User: "Check if login redirects correctly"
 
 Claude: I'll test the login flow. First, let me check for running servers...
-[Runs: detectDevServers()]
+[Runs: detect_dev_servers()]
 [Output: Found servers on ports 3000 and 3001]
 I found 2 dev servers. Which one should I test?
 - http://localhost:3000
@@ -438,8 +463,8 @@ I found 2 dev servers. Which one should I test?
 
 User: "Use 3001"
 
-[Writes login automation to /tmp/playwright-test-login.js]
-[Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-login.js]
+[Writes login automation to /tmp/playwright-test-login.py]
+[Runs: cd $SKILL_DIR && uv run run.py /tmp/playwright-test-login.py]
 [Reports: ✅ Login successful, redirected to /dashboard]
 ```
 
@@ -449,5 +474,6 @@ User: "Use 3001"
 - Not limited to pre-built scripts - any browser task possible
 - Auto-detects running dev servers to eliminate hardcoded URLs
 - Test scripts written to `/tmp` for automatic cleanup (no clutter)
-- Code executes reliably with proper module resolution via `run.js`
+- Code executes reliably with proper module resolution via `run.py`
 - Progressive disclosure - API_REFERENCE.md loaded only when advanced features needed
+- Chromium browser must be installed separately (correct version for Playwright 1.54.0)
