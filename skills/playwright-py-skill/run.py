@@ -21,6 +21,7 @@ import os
 import sys
 import tempfile
 import json
+import time
 from pathlib import Path
 import asyncio
 import aiohttp
@@ -186,7 +187,7 @@ def main():
     code = wrap_code_if_needed(raw_code)
 
     # Create temporary file for execution
-    temp_file = script_dir / f".temp-execution-{asyncio.get_event_loop().time()}.py"
+    temp_file = script_dir / f".temp-execution-{time.time()}.py"
 
     try:
         # Write code to temp file
