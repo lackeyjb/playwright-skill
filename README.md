@@ -1,5 +1,8 @@
 # Playwright Skill for Claude Code
 
+[![Run in Smithery](https://smithery.ai/badge/skills/lackeyjb)](https://smithery.ai/skills?ns=lackeyjb&utm_source=github&utm_medium=badge)
+
+
 **General-purpose browser automation as a Claude Skill**
 
 A [Claude Skill](https://www.anthropic.com/blog/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
