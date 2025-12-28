@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate version consistency
+        run: |
+          # Extract versions from all files
+          PLUGIN_VERSION=$(grep '"version"' .claude-plugin/plugin.json | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/')
+          MARKETPLACE_VERSION=$(python3 -c "import json; print(json.load(open('.claude-plugin/marketplace.json'))['plugins'][0]['version'])")
+          PYPROJECT_VERSION=$(grep '^version = ' skills/playwright-skill/pyproject.toml | sed 's/version = "\([^"]*\)"/\1/')
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+
+          echo "Tag version: $TAG_VERSION"
+          echo "plugin.json version: $PLUGIN_VERSION"
+          echo "marketplace.json version: $MARKETPLACE_VERSION"
+          echo "pyproject.toml version: $PYPROJECT_VERSION"
+
+          # Check all versions match
+          if [[ "$PLUGIN_VERSION" != "$TAG_VERSION" ]]; then
+            echo "❌ plugin.json version ($PLUGIN_VERSION) doesn't match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          if [[ "$MARKETPLACE_VERSION" != "$TAG_VERSION" ]]; then
+            echo "❌ marketplace.json version ($MARKETPLACE_VERSION) doesn't match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          if [[ "$PYPROJECT_VERSION" != "$TAG_VERSION" ]]; then
+            echo "❌ pyproject.toml version ($PYPROJECT_VERSION) doesn't match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+          echo "✅ All versions match: $TAG_VERSION"
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [[ -n "$PREV_TAG" ]]; then
+            echo "Generating changelog from $PREV_TAG to ${GITHUB_REF#refs/tags/}"
+            CHANGES=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+          else
+            echo "First release, including all commits"
+            CHANGES=$(git log --pretty=format:"- %s")
+          fi
+
+          # Write to file for multiline support
+          echo "$CHANGES" > /tmp/changes.txt
+          echo "changes_file=/tmp/changes.txt" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          body_path: /tmp/changes.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
