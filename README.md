@@ -101,7 +101,19 @@ rm -rf /tmp/playwright-skill-temp
 
 ---
 
-### Option 3: Download Release
+### Option 3: Install with `sk`
+
+Install playwright-skill via [sk](https://github.com/803/skills-supply), the universal skills package manager for coding agents (supports Claude Code, Amp, Codex, OpenCode, etc...).
+
+```bash
+# Add --global flag if you'd like to install in user-scope (defaults to project-scope)
+sk pkg add claude-plugin playwright-skill@lackeyjb/playwright-skill
+sk sync
+```
+
+---
+
+### Option 4: Download Release
 
 1. Download and extract the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
 2. Copy only the `skills/playwright-skill/` folder to:
