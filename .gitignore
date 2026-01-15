@@ -34,3 +34,5 @@ screenshots/
 # Testing
 MANUAL_TEST.md
 TEST_PLAN.md
+.claude/playwright.local.md
+.claude/settings.local.json
