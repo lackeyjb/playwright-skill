@@ -31,12 +31,38 @@ function checkPlaywrightInstalled() {
 
 /**
  * Install Playwright if missing
+ * Installs browsers based on config (chromium by default, but respects channel/executablePath)
  */
 function installPlaywright() {
   console.log('📦 Playwright not found. Installing...');
   try {
     execSync('npm install', { stdio: 'inherit', cwd: __dirname });
-    execSync('npx playwright install chromium', { stdio: 'inherit', cwd: __dirname });
+
+    // Check if user has a config with channel or executablePath
+    // If so, they may be using an installed browser and don't need Playwright's browsers
+    let browserType = 'chromium';
+    let skipBrowserInstall = false;
+
+    try {
+      const helpers = require('./lib/helpers');
+      const config = helpers.readBrowserConfig();
+
+      if (config.executablePath) {
+        console.log('📋 Config specifies executablePath - skipping browser download');
+        skipBrowserInstall = true;
+      } else if (config.browser) {
+        browserType = config.browser;
+      }
+    } catch (configErr) {
+      // Config reading failed, use defaults
+    }
+
+    if (!skipBrowserInstall) {
+      console.log(`📦 Installing ${browserType} browser...`);
+      // Browser type is from config validation (only chromium/firefox/webkit allowed)
+      execSync(`npx playwright install ${browserType}`, { stdio: 'inherit', cwd: __dirname });
+    }
+
     console.log('✅ Playwright installed successfully');
     return true;
   } catch (e) {
@@ -122,8 +148,54 @@ function wrapCodeIfNeeded(code) {
 const { chromium, firefox, webkit, devices } = require('playwright');
 const helpers = require('./lib/helpers');
 
+// Browser configuration from .claude/playwright.local.md (if exists)
+const __browserConfig = helpers.readBrowserConfig();
+
 // Extra headers from environment variables (if configured)
 const __extraHeaders = helpers.getExtraHeadersFromEnv();
+
+/**
+ * Get browser configuration from .claude/playwright.local.md
+ * Returns: { browser, channel, headless, executablePath, slowMo }
+ */
+function getBrowserConfig() {
+  return __browserConfig;
+}
+
+/**
+ * Launch browser using configuration from .claude/playwright.local.md
+ * Automatically uses configured browser type, channel, and executable path.
+ * @param {Object} options - Additional options to override config
+ */
+async function launchConfiguredBrowser(options = {}) {
+  const config = { ...__browserConfig, ...options };
+  const browsers = { chromium, firefox, webkit };
+  const browserType = config.browser || 'chromium';
+  const browser = browsers[browserType];
+
+  if (!browser) {
+    throw new Error(\`Invalid browser type: \${browserType}\`);
+  }
+
+  const launchOptions = {
+    headless: config.headless !== undefined ? config.headless : false,
+    slowMo: config.slowMo || 0,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  };
+
+  if (config.channel && browserType === 'chromium') {
+    launchOptions.channel = config.channel;
+    console.log(\`🌐 Using browser channel: \${config.channel}\`);
+  }
+
+  if (config.executablePath) {
+    launchOptions.executablePath = config.executablePath;
+    console.log(\`🌐 Using browser executable: \${config.executablePath}\`);
+  }
+
+  console.log(\`🎭 Launching \${browserType}\${launchOptions.headless ? ' (headless)' : ''}\`);
+  return await browser.launch(launchOptions);
+}
 
 /**
  * Utility to merge environment headers into context options.

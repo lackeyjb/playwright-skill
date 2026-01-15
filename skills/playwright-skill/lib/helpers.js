@@ -2,6 +2,135 @@
 // Reusable utility functions for Playwright automation
 
 const { chromium, firefox, webkit } = require('playwright');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Read browser configuration from .claude/playwright.local.md
+ * Searches from current working directory upward to find config file.
+ *
+ * Config file format (YAML frontmatter):
+ * ---
+ * browser: chromium | firefox | webkit
+ * channel: chrome | msedge | chrome-beta | msedge-beta | brave
+ * headless: true | false
+ * executablePath: /path/to/browser
+ * slowMo: 100
+ * ---
+ *
+ * @param {string} startDir - Directory to start searching from (defaults to cwd)
+ * @returns {Object} Browser configuration with defaults applied
+ */
+function readBrowserConfig(startDir = process.cwd()) {
+  const defaults = {
+    browser: 'chromium',
+    channel: null,
+    headless: false,
+    executablePath: null,
+    slowMo: 0
+  };
+
+  const configPath = findConfigFile(startDir);
+  if (!configPath) {
+    return defaults;
+  }
+
+  try {
+    const content = fs.readFileSync(configPath, 'utf8');
+    const config = parseYamlFrontmatter(content);
+
+    console.log(`📋 Loaded browser config from: ${configPath}`);
+
+    // Merge with defaults, only including valid options
+    const merged = { ...defaults };
+
+    if (config.browser && ['chromium', 'firefox', 'webkit'].includes(config.browser)) {
+      merged.browser = config.browser;
+    }
+
+    if (config.channel) {
+      merged.channel = config.channel;
+    }
+
+    if (typeof config.headless === 'boolean') {
+      merged.headless = config.headless;
+    }
+
+    if (config.executablePath) {
+      merged.executablePath = config.executablePath;
+    }
+
+    if (typeof config.slowMo === 'number') {
+      merged.slowMo = config.slowMo;
+    }
+
+    return merged;
+  } catch (e) {
+    console.warn(`⚠️ Failed to read config file: ${e.message}`);
+    return defaults;
+  }
+}
+
+/**
+ * Find playwright.local.md config file by searching upward from startDir
+ * @param {string} startDir - Directory to start searching from
+ * @returns {string|null} Path to config file or null if not found
+ */
+function findConfigFile(startDir) {
+  let currentDir = path.resolve(startDir);
+  const root = path.parse(currentDir).root;
+
+  while (currentDir !== root) {
+    const configPath = path.join(currentDir, '.claude', 'playwright.local.md');
+    if (fs.existsSync(configPath)) {
+      return configPath;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+
+  return null;
+}
+
+/**
+ * Parse YAML frontmatter from markdown content
+ * @param {string} content - File content with optional YAML frontmatter
+ * @returns {Object} Parsed frontmatter or empty object
+ */
+function parseYamlFrontmatter(content) {
+  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatterMatch) {
+    return {};
+  }
+
+  const yaml = frontmatterMatch[1];
+  const result = {};
+
+  // Simple YAML parser for key: value pairs
+  const lines = yaml.split('\n');
+  for (const line of lines) {
+    const match = line.match(/^(\w+):\s*(.*)$/);
+    if (match) {
+      const key = match[1];
+      let value = match[2].trim();
+
+      // Parse value types
+      if (value === 'true') value = true;
+      else if (value === 'false') value = false;
+      else if (value === 'null' || value === '') value = null;
+      else if (/^\d+$/.test(value)) value = parseInt(value, 10);
+      else if (/^\d+\.\d+$/.test(value)) value = parseFloat(value);
+      // Remove quotes if present
+      else if ((value.startsWith('"') && value.endsWith('"')) ||
+               (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
 
 /**
  * Parse extra HTTP headers from environment variables.
@@ -36,25 +165,68 @@ function getExtraHeadersFromEnv() {
 }
 
 /**
- * Launch browser with standard configuration
- * @param {string} browserType - 'chromium', 'firefox', or 'webkit'
+ * Launch browser with configuration from .claude/playwright.local.md or options
+ *
+ * Supports Chromium channels for using installed browsers like:
+ * - 'chrome' (Google Chrome)
+ * - 'chrome-beta', 'chrome-dev', 'chrome-canary'
+ * - 'msedge' (Microsoft Edge)
+ * - 'msedge-beta', 'msedge-dev'
+ * - 'brave' (Brave Browser) - requires executablePath on most systems
+ *
+ * @param {string} browserType - 'chromium', 'firefox', or 'webkit' (can be overridden by config)
  * @param {Object} options - Additional launch options
+ * @param {string} options.channel - Browser channel (chrome, msedge, brave, etc.)
+ * @param {string} options.executablePath - Custom browser executable path
+ * @param {boolean} options.useConfig - Whether to read from config file (default: true)
  */
 async function launchBrowser(browserType = 'chromium', options = {}) {
-  const defaultOptions = {
-    headless: process.env.HEADLESS !== 'false',
-    slowMo: process.env.SLOW_MO ? parseInt(process.env.SLOW_MO) : 0,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  // Read config from .claude/playwright.local.md unless disabled
+  const config = options.useConfig !== false ? readBrowserConfig() : {};
+
+  // Merge config with options (options take precedence)
+  const effectiveBrowserType = options.browser || config.browser || browserType;
+  const effectiveChannel = options.channel || config.channel || null;
+  const effectiveHeadless = options.headless !== undefined
+    ? options.headless
+    : (config.headless !== undefined ? config.headless : (process.env.HEADLESS !== 'false'));
+  const effectiveSlowMo = options.slowMo !== undefined
+    ? options.slowMo
+    : (config.slowMo || (process.env.SLOW_MO ? parseInt(process.env.SLOW_MO) : 0));
+  const effectiveExecutablePath = options.executablePath || config.executablePath || null;
+
+  const launchOptions = {
+    headless: effectiveHeadless,
+    slowMo: effectiveSlowMo,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    ...options
   };
-  
-  const browsers = { chromium, firefox, webkit };
-  const browser = browsers[browserType];
-  
-  if (!browser) {
-    throw new Error(`Invalid browser type: ${browserType}`);
+
+  // Add channel if specified (only works with chromium)
+  if (effectiveChannel && effectiveBrowserType === 'chromium') {
+    launchOptions.channel = effectiveChannel;
+    console.log(`🌐 Using browser channel: ${effectiveChannel}`);
   }
-  
-  return await browser.launch({ ...defaultOptions, ...options });
+
+  // Add executablePath if specified
+  if (effectiveExecutablePath) {
+    launchOptions.executablePath = effectiveExecutablePath;
+    console.log(`🌐 Using browser executable: ${effectiveExecutablePath}`);
+  }
+
+  // Remove helper options that aren't valid Playwright options
+  delete launchOptions.useConfig;
+  delete launchOptions.browser;
+
+  const browsers = { chromium, firefox, webkit };
+  const browser = browsers[effectiveBrowserType];
+
+  if (!browser) {
+    throw new Error(`Invalid browser type: ${effectiveBrowserType}. Valid types: chromium, firefox, webkit`);
+  }
+
+  console.log(`🎭 Launching ${effectiveBrowserType}${effectiveHeadless ? ' (headless)' : ''}`);
+  return await browser.launch(launchOptions);
 }
 
 /**
@@ -423,8 +595,15 @@ async function detectDevServers(customPorts = []) {
 }
 
 module.exports = {
+  // Browser configuration
+  readBrowserConfig,
+  findConfigFile,
+  parseYamlFrontmatter,
+  // Browser management
   launchBrowser,
   createPage,
+  createContext,
+  // Page utilities
   waitForPageReady,
   safeClick,
   safeType,
@@ -435,7 +614,8 @@ module.exports = {
   extractTableData,
   handleCookieBanner,
   retryWithBackoff,
-  createContext,
+  // Server detection
   detectDevServers,
+  // Headers
   getExtraHeadersFromEnv
 };

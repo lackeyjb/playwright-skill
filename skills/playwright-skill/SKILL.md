@@ -1,6 +1,11 @@
 ---
 name: playwright-skill
 description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
+license: MIT
+compatibility: Requires Node.js. Works with Claude Code and other Agent Skills compatible platforms.
+metadata:
+  author: lackeyjb
+  version: "4.2.0"
 ---
 
 **IMPORTANT - Path Resolution:**
@@ -43,6 +48,52 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 5. Results displayed in real-time, browser window visible for debugging
 6. Test files auto-cleaned from /tmp by your OS
 
+## Browser Configuration
+
+Users can configure their preferred browser by creating `.claude/playwright.local.md` in their project:
+
+```markdown
+---
+browser: chromium
+headless: false
+executablePath: /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
+slowMo: 50
+---
+```
+
+Or use a standard Playwright channel like Chrome or Edge:
+
+```markdown
+---
+browser: chromium
+channel: chrome
+headless: false
+---
+```
+
+**Configuration options:**
+
+| Option | Values | Description |
+|--------|--------|-------------|
+| `browser` | `chromium`, `firefox`, `webkit` | Browser engine (default: chromium) |
+| `channel` | `chrome`, `msedge`, etc. | Use installed Chrome/Edge instead of Playwright's bundled browser |
+| `headless` | `true`, `false` | Run without visible window (default: false) |
+| `executablePath` | Path string | Custom browser executable path |
+| `slowMo` | Number (ms) | Slow down operations for debugging |
+
+**Common channel values for Chromium:**
+- `chrome` - Google Chrome
+- `msedge` - Microsoft Edge
+- `chrome-beta`, `chrome-dev`, `chrome-canary` - Chrome pre-release
+- `msedge-beta`, `msedge-dev` - Edge pre-release
+
+**For Brave Browser:** Use `executablePath` since Brave isn't a standard Playwright channel:
+```yaml
+executablePath: /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
+```
+
+**IMPORTANT:** When a config file exists, scripts should use `launchConfiguredBrowser()` instead of `chromium.launch()` to respect user preferences.
+
 ## Setup (First Time)
 
 ```bash
@@ -50,7 +101,7 @@ cd $SKILL_DIR
 npm run setup
 ```
 
-This installs Playwright and Chromium browser. Only needed once.
+This installs Playwright and the configured browser. If `executablePath` is set in config, browser download is skipped.
 
 ## Execution Pattern
 
@@ -64,24 +115,23 @@ cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => 
 
 ```javascript
 // /tmp/playwright-test-page.js
-const { chromium } = require('playwright');
-
 // Parameterized URL (detected or user-provided)
 const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+// launchConfiguredBrowser() reads from .claude/playwright.local.md
+const browser = await launchConfiguredBrowser();
+const page = await browser.newPage();
 
-  await page.goto(TARGET_URL);
-  console.log('Page loaded:', await page.title());
+await page.goto(TARGET_URL);
+console.log('Page loaded:', await page.title());
 
-  await page.screenshot({ path: '/tmp/screenshot.png', fullPage: true });
-  console.log('📸 Screenshot saved to /tmp/screenshot.png');
+await page.screenshot({ path: '/tmp/screenshot.png', fullPage: true });
+console.log('📸 Screenshot saved to /tmp/screenshot.png');
 
-  await browser.close();
-})();
+await browser.close();
 ```
+
+**Note:** Scripts without `require()` are auto-wrapped with helpers. Use `launchConfiguredBrowser()` to respect user's browser preferences from `.claude/playwright.local.md`.
 
 **Step 3: Execute from skill directory**
 
@@ -95,185 +145,165 @@ cd $SKILL_DIR && node run.js /tmp/playwright-test-page.js
 
 ```javascript
 // /tmp/playwright-test-responsive.js
-const { chromium } = require('playwright');
-
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 100 });
-  const page = await browser.newPage();
+const browser = await launchConfiguredBrowser({ slowMo: 100 });
+const page = await browser.newPage();
 
-  // Desktop test
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto(TARGET_URL);
-  console.log('Desktop - Title:', await page.title());
-  await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
+// Desktop test
+await page.setViewportSize({ width: 1920, height: 1080 });
+await page.goto(TARGET_URL);
+console.log('Desktop - Title:', await page.title());
+await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
 
-  // Mobile test
-  await page.setViewportSize({ width: 375, height: 667 });
-  await page.screenshot({ path: '/tmp/mobile.png', fullPage: true });
+// Mobile test
+await page.setViewportSize({ width: 375, height: 667 });
+await page.screenshot({ path: '/tmp/mobile.png', fullPage: true });
 
-  await browser.close();
-})();
+await browser.close();
 ```
 
 ### Test Login Flow
 
 ```javascript
 // /tmp/playwright-test-login.js
-const { chromium } = require('playwright');
-
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+const browser = await launchConfiguredBrowser();
+const page = await browser.newPage();
 
-  await page.goto(`${TARGET_URL}/login`);
+await page.goto(`${TARGET_URL}/login`);
 
-  await page.fill('input[name="email"]', 'test@example.com');
-  await page.fill('input[name="password"]', 'password123');
-  await page.click('button[type="submit"]');
+await page.fill('input[name="email"]', 'test@example.com');
+await page.fill('input[name="password"]', 'password123');
+await page.click('button[type="submit"]');
 
-  // Wait for redirect
-  await page.waitForURL('**/dashboard');
-  console.log('✅ Login successful, redirected to dashboard');
+// Wait for redirect
+await page.waitForURL('**/dashboard');
+console.log('✅ Login successful, redirected to dashboard');
 
-  await browser.close();
-})();
+await browser.close();
 ```
 
 ### Fill and Submit Form
 
 ```javascript
 // /tmp/playwright-test-form.js
-const { chromium } = require('playwright');
-
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 50 });
-  const page = await browser.newPage();
+const browser = await launchConfiguredBrowser({ slowMo: 50 });
+const page = await browser.newPage();
 
-  await page.goto(`${TARGET_URL}/contact`);
+await page.goto(`${TARGET_URL}/contact`);
 
-  await page.fill('input[name="name"]', 'John Doe');
-  await page.fill('input[name="email"]', 'john@example.com');
-  await page.fill('textarea[name="message"]', 'Test message');
-  await page.click('button[type="submit"]');
+await page.fill('input[name="name"]', 'John Doe');
+await page.fill('input[name="email"]', 'john@example.com');
+await page.fill('textarea[name="message"]', 'Test message');
+await page.click('button[type="submit"]');
 
-  // Verify submission
-  await page.waitForSelector('.success-message');
-  console.log('✅ Form submitted successfully');
+// Verify submission
+await page.waitForSelector('.success-message');
+console.log('✅ Form submitted successfully');
 
-  await browser.close();
-})();
+await browser.close();
 ```
 
 ### Check for Broken Links
 
 ```javascript
-const { chromium } = require('playwright');
+const TARGET_URL = 'http://localhost:3000'; // Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+const browser = await launchConfiguredBrowser();
+const page = await browser.newPage();
 
-  await page.goto('http://localhost:3000');
+await page.goto(TARGET_URL);
 
-  const links = await page.locator('a[href^="http"]').all();
-  const results = { working: 0, broken: [] };
+const links = await page.locator('a[href^="http"]').all();
+const results = { working: 0, broken: [] };
 
-  for (const link of links) {
-    const href = await link.getAttribute('href');
-    try {
-      const response = await page.request.head(href);
-      if (response.ok()) {
-        results.working++;
-      } else {
-        results.broken.push({ url: href, status: response.status() });
-      }
-    } catch (e) {
-      results.broken.push({ url: href, error: e.message });
+for (const link of links) {
+  const href = await link.getAttribute('href');
+  try {
+    const response = await page.request.head(href);
+    if (response.ok()) {
+      results.working++;
+    } else {
+      results.broken.push({ url: href, status: response.status() });
     }
+  } catch (e) {
+    results.broken.push({ url: href, error: e.message });
   }
+}
 
-  console.log(`✅ Working links: ${results.working}`);
-  console.log(`❌ Broken links:`, results.broken);
+console.log(`✅ Working links: ${results.working}`);
+console.log(`❌ Broken links:`, results.broken);
 
-  await browser.close();
-})();
+await browser.close();
 ```
 
 ### Take Screenshot with Error Handling
 
 ```javascript
-const { chromium } = require('playwright');
+const TARGET_URL = 'http://localhost:3000'; // Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+const browser = await launchConfiguredBrowser();
+const page = await browser.newPage();
 
-  try {
-    await page.goto('http://localhost:3000', {
-      waitUntil: 'networkidle',
-      timeout: 10000,
-    });
+try {
+  await page.goto(TARGET_URL, {
+    waitUntil: 'networkidle',
+    timeout: 10000,
+  });
 
-    await page.screenshot({
-      path: '/tmp/screenshot.png',
-      fullPage: true,
-    });
+  await page.screenshot({
+    path: '/tmp/screenshot.png',
+    fullPage: true,
+  });
 
-    console.log('📸 Screenshot saved to /tmp/screenshot.png');
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-  } finally {
-    await browser.close();
-  }
-})();
+  console.log('📸 Screenshot saved to /tmp/screenshot.png');
+} catch (error) {
+  console.error('❌ Error:', error.message);
+} finally {
+  await browser.close();
+}
 ```
 
 ### Test Responsive Design
 
 ```javascript
 // /tmp/playwright-test-responsive-full.js
-const { chromium } = require('playwright');
-
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+const browser = await launchConfiguredBrowser();
+const page = await browser.newPage();
 
-  const viewports = [
-    { name: 'Desktop', width: 1920, height: 1080 },
-    { name: 'Tablet', width: 768, height: 1024 },
-    { name: 'Mobile', width: 375, height: 667 },
-  ];
+const viewports = [
+  { name: 'Desktop', width: 1920, height: 1080 },
+  { name: 'Tablet', width: 768, height: 1024 },
+  { name: 'Mobile', width: 375, height: 667 },
+];
 
-  for (const viewport of viewports) {
-    console.log(
-      `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
-    );
+for (const viewport of viewports) {
+  console.log(
+    `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
+  );
 
-    await page.setViewportSize({
-      width: viewport.width,
-      height: viewport.height,
-    });
+  await page.setViewportSize({
+    width: viewport.width,
+    height: viewport.height,
+  });
 
-    await page.goto(TARGET_URL);
-    await page.waitForTimeout(1000);
+  await page.goto(TARGET_URL);
+  await page.waitForTimeout(1000);
 
-    await page.screenshot({
-      path: `/tmp/${viewport.name.toLowerCase()}.png`,
-      fullPage: true,
-    });
-  }
+  await page.screenshot({
+    path: `/tmp/${viewport.name.toLowerCase()}.png`,
+    fullPage: true,
+  });
+}
 
-  console.log('✅ All viewports tested');
-  await browser.close();
-})();
+console.log('✅ All viewports tested');
+await browser.close();
 ```
 
 ## Inline Execution (Simple Tasks)
@@ -281,9 +311,9 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 For quick one-off tasks, you can execute code inline without creating files:
 
 ```bash
-# Take a quick screenshot
+# Take a quick screenshot (uses browser from .claude/playwright.local.md)
 cd $SKILL_DIR && node run.js "
-const browser = await chromium.launch({ headless: false });
+const browser = await launchConfiguredBrowser();
 const page = await browser.newPage();
 await page.goto('http://localhost:3001');
 await page.screenshot({ path: '/tmp/quick-screenshot.png', fullPage: true });
@@ -304,6 +334,14 @@ Optional utility functions in `lib/helpers.js`:
 ```javascript
 const helpers = require('./lib/helpers');
 
+// Read browser config from .claude/playwright.local.md
+const config = helpers.readBrowserConfig();
+console.log('Browser config:', config);
+
+// Launch browser with config (auto-reads .claude/playwright.local.md)
+const browser = await helpers.launchBrowser();
+// Or specify options: helpers.launchBrowser('chromium', { channel: 'brave' })
+
 // Detect running dev servers (CRITICAL - use this first!)
 const servers = await helpers.detectDevServers();
 console.log('Found servers:', servers);
@@ -323,6 +361,11 @@ await helpers.handleCookieBanner(page);
 // Extract table data
 const data = await helpers.extractTableData(page, 'table.results');
 ```
+
+**Auto-injected functions** (available in scripts without `require()`):
+- `launchConfiguredBrowser(options)` - Launch browser using config file settings
+- `getBrowserConfig()` - Get current browser configuration
+- `getContextOptionsWithHeaders(options)` - Merge custom HTTP headers
 
 See `lib/helpers.js` for full list.
 
@@ -384,12 +427,12 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 ## Tips
 
 - **CRITICAL: Detect servers FIRST** - Always run `detectDevServers()` before writing test code for localhost testing
+- **Respect user's browser config** - Always use `launchConfiguredBrowser()` to honor `.claude/playwright.local.md` settings
 - **Custom headers** - Use `PW_HEADER_NAME`/`PW_HEADER_VALUE` env vars to identify automated traffic to your backend
 - **Use /tmp for test files** - Write to `/tmp/playwright-test-*.js`, never to skill directory or user's project
 - **Parameterize URLs** - Put detected/provided URL in a `TARGET_URL` constant at the top of every script
-- **DEFAULT: Visible browser** - Always use `headless: false` unless user explicitly asks for headless mode
-- **Headless mode** - Only use `headless: true` when user specifically requests "headless" or "background" execution
-- **Slow down:** Use `slowMo: 100` to make actions visible and easier to follow
+- **DEFAULT: Visible browser** - Config defaults to `headless: false` unless user overrides in config or explicitly requests headless
+- **Slow down:** Use `slowMo` option (in config or code) to make actions visible and easier to follow
 - **Wait strategies:** Use `waitForURL`, `waitForSelector`, `waitForLoadState` instead of fixed timeouts
 - **Error handling:** Always use try-catch for robust automation
 - **Console output:** Use `console.log()` to track progress and show what's happening
@@ -406,7 +449,16 @@ cd $SKILL_DIR && npm run setup
 Ensure running from skill directory via `run.js` wrapper
 
 **Browser doesn't open:**
-Check `headless: false` and ensure display available
+Check `headless: false` in `.claude/playwright.local.md` and ensure display available
+
+**Browser executable not found:**
+Verify the `executablePath` in `.claude/playwright.local.md` points to a valid browser:
+- macOS Brave: `/Applications/Brave Browser.app/Contents/MacOS/Brave Browser`
+- Linux Brave: `/usr/bin/brave-browser`
+- Windows Brave: `C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe`
+
+**Config not being read:**
+Config file must be at `.claude/playwright.local.md` in your project (searches upward from cwd)
 
 **Element not found:**
 Add wait: `await page.waitForSelector('.element', { timeout: 10000 })`
