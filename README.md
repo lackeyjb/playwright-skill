@@ -54,8 +54,13 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
+```
 
-# Navigate to the skill directory and run setup
+**For Claude Code on the web:** Setup is automatic via the SessionStart hook. Skip the manual setup below.
+
+**For local terminal use:** Navigate to the skill directory and run setup:
+
+```bash
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 uv pip install patchright
 patchright install chrome
@@ -67,7 +72,9 @@ Verify installation by running `/help` to confirm the skill is available.
 
 ### Option 2: Standalone Skill Installation
 
-To install as a standalone skill (without the plugin system), extract only the skill folder:
+To install as a standalone skill (without the plugin system), extract only the skill folder.
+
+**Note:** When installed as a standalone skill, you won't have access to the SessionStart hook (which is repository-level). For automatic setup in Claude Code on the web, use Option 1 (Plugin Installation) or clone the entire repository.
 
 **Global Installation (Available Everywhere):**
 
@@ -79,7 +86,7 @@ git clone https://github.com/a5m0/playwright-skill.git /tmp/playwright-skill-tem
 mkdir -p ~/.claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
-# Navigate to the skill and run setup
+# Navigate to the skill and run setup (required for standalone)
 cd ~/.claude/skills/playwright-skill
 uv pip install patchright
 patchright install chrome
@@ -98,7 +105,7 @@ git clone https://github.com/a5m0/playwright-skill.git /tmp/playwright-skill-tem
 mkdir -p .claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 
-# Navigate to the skill and run setup
+# Navigate to the skill and run setup (required for standalone)
 cd .claude/skills/playwright-skill
 uv pip install patchright
 patchright install chrome
@@ -109,9 +116,37 @@ rm -rf /tmp/playwright-skill-temp
 
 **Why this structure?** The plugin format requires the `skills/` directory for organizing multiple skills within a plugin. When installing as a standalone skill, you only need the inner `skills/playwright-skill/` folder contents.
 
+**Limitation:** Standalone installation doesn't include the SessionStart hook for automatic setup in web environments.
+
 ---
 
-### Option 3: Download Release
+### Option 3: Clone Repository (Full Features)
+
+Clone the entire repository to get SessionStart hook support without using the plugin system:
+
+```bash
+# Clone the repository
+git clone https://github.com/a5m0/playwright-skill.git
+
+# Or clone to a specific directory
+git clone https://github.com/a5m0/playwright-skill.git /path/to/your/project
+```
+
+**Benefits:**
+- ✅ SessionStart hook for automatic setup in Claude Code on the web
+- ✅ Direct access to all scripts and configuration
+- ✅ Easy to fork and customize
+- ✅ Can commit and track your own changes
+
+**Setup:**
+- **Claude Code on the web**: Automatic via SessionStart hook
+- **Local terminal**: Run manual setup once (see commands in Option 1)
+
+The repository includes `.claude/settings.json` which configures the SessionStart hook to run `scripts/setup-session.sh` automatically.
+
+---
+
+### Option 4: Download Release
 
 1. Download and extract the latest release from [GitHub Releases](https://github.com/a5m0/playwright-skill/releases)
 2. Copy only the `skills/playwright-skill/` folder to:
@@ -129,6 +164,147 @@ rm -rf /tmp/playwright-skill-temp
 ### Verify Installation
 
 Run `/help` to confirm the skill is loaded, then ask Claude to perform a simple browser task like "Test if google.com loads".
+
+---
+
+## Claude Code on the Web - Automatic Setup
+
+This repository includes a **SessionStart hook** that automatically configures the skill when you use Claude Code on the web (browser-based sessions).
+
+### What Happens Automatically
+
+When you start a Claude Code session in the web, the setup hook runs and:
+
+1. ✅ **Detects your environment** - Identifies web vs local terminal
+2. ✅ **Installs patchright** - Uses `uv pip install patchright` for fast dependency installation
+3. ✅ **Installs Chrome browser** - Downloads and configures Chrome for automation
+4. ✅ **Configures Python path** - Adds the skill directory to `PYTHONPATH`
+5. ✅ **Sets environment variables** - Persists `CHROME_EXECUTABLE` and other settings
+
+**No manual setup required!** Just start working with Claude and ask for browser automation.
+
+### Installation Time
+
+- **First session**: ~30-60 seconds (downloads Chrome browser, ~200MB)
+- **Subsequent sessions**: ~5-10 seconds (verifies existing installation)
+
+The hook is idempotent - it checks if packages are already installed and skips reinstallation.
+
+### How It Works
+
+The repository includes:
+- `.claude/settings.json` - Configures the SessionStart hook
+- `scripts/setup-session.sh` - The setup script that runs automatically
+- `CLAUDE.md` - Documentation for Claude about the repository
+
+You can see the setup progress in the Claude Code output when a session starts.
+
+### Manual Setup (Optional)
+
+If you prefer to set up manually or are working locally:
+
+```bash
+# Navigate to the skill directory
+cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
+
+# Install patchright
+uv pip install patchright
+
+# Install Chrome browser
+patchright install chrome
+```
+
+---
+
+## Updates
+
+### Automatic Updates (Plugin Installation)
+
+If you installed via the plugin system (Option 1), you get **automatic updates** when Claude Code starts:
+
+**How it works:**
+- Claude Code checks for plugin updates at startup (if auto-update is enabled for the marketplace)
+- Your installed plugin automatically updates to the latest version
+- You'll see a notification if updates were installed
+- Restart Claude Code to complete the update process
+
+**What gets updated:**
+- ✅ Skill files (SKILL.md, run.py, lib/helpers.py, etc.)
+- ✅ Plugin metadata (plugin.json, marketplace.json)
+- ✅ Documentation (README.md, API_REFERENCE.md)
+- ❌ Python dependencies (patchright) - see manual update below
+
+**Auto-update is enabled by default** for GitHub marketplace repositories.
+
+### Manual Updates
+
+**Update the plugin:**
+```bash
+# Update to latest version
+claude plugin update playwright-skill@a5m0/playwright-skill
+
+# Or use the interactive UI
+/plugin
+# Navigate to "Installed" tab → select plugin → click "Update"
+```
+
+**Update Python dependencies:**
+```bash
+# Navigate to the skill directory
+cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
+
+# Update patchright
+uv pip install --upgrade patchright
+
+# Update Chrome browser if needed
+patchright install chrome --force
+```
+
+### Check Version
+
+**Current version:**
+```bash
+/plugin
+# Navigate to "Installed" tab to see current version
+```
+
+**Latest available version:**
+- Check the [GitHub Releases](https://github.com/a5m0/playwright-skill/releases) page
+- Or navigate to "Discover" tab in `/plugin` UI
+
+**Current version is:** `5.0.0` (as of latest release)
+
+### Disable Auto-Updates
+
+If you need version stability for production environments:
+
+```bash
+# Disable all auto-updates (Claude Code + plugins)
+export DISABLE_AUTOUPDATER=true
+
+# Or disable only Claude Code updates, keep plugin updates
+export FORCE_AUTOUPDATE_PLUGINS=true
+```
+
+Add these to your shell profile (`~/.bashrc`, `~/.zshrc`) to make them persistent.
+
+### Important Notes
+
+**⚠️ Customization Warning:**
+- Plugin updates **overwrite all skill files** with the latest version
+- If you've customized SKILL.md, run.py, or other files, your changes will be lost
+- Solution: Fork the repository and use your own marketplace, or install as a standalone skill
+
+**Update Scope:**
+- Plugin system updates apply to: `user` (global), `project` (repo-specific), or `local` scopes
+- Check your installation scope with `/plugin` to know which installation gets updated
+
+**Version Consistency:**
+- All version files (plugin.json, marketplace.json, pyproject.toml) are kept in sync
+- Releases are created via GitHub Actions when new version tags are pushed
+- Each release includes automated version validation
+
+---
 
 ## Quick Start
 
@@ -190,14 +366,16 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 
 ## Claude Code Web Environments
 
-When running in **Claude Code for Web** (browser-based sessions), the skill automatically:
+When running in **Claude Code for Web** (browser-based sessions), the repository includes a **SessionStart hook** that automatically sets up dependencies at session startup (see "Claude Code on the Web - Automatic Setup" section above).
+
+The skill then automatically:
 
 ✅ **Detects the environment** - Uses official `CLAUDE_CODE_REMOTE` environment variable
 ✅ **Configures proxy authentication** - Automatically starts a local proxy wrapper to handle JWT authentication
 ✅ **Enables headless mode** - Runs Chrome in headless mode (no GUI in web containers)
 ✅ **Accesses external sites** - Full internet access through authenticated proxy
 
-**No configuration needed** - the skill handles everything automatically. Simply use it normally:
+**No manual configuration needed** - the SessionStart hook installs dependencies, and the skill handles runtime configuration automatically. Simply use it normally:
 
 ```python
 from lib.helpers import get_browser_config
