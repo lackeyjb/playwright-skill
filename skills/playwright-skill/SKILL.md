@@ -1,6 +1,6 @@
 ---
 name: playwright-skill
-description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
+description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, record videos, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
 ---
 
 **IMPORTANT - Path Resolution:**
@@ -275,6 +275,82 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
   await browser.close();
 })();
 ```
+
+### Record Session and Extract Frames for Analysis
+
+Record a browser session as video, then extract frames for Claude to analyze. Useful for debugging visual issues, verifying animations, or reviewing user flows.
+
+```javascript
+// /tmp/playwright-test-record-analyze.js
+const { chromium } = require('playwright');
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const TARGET_URL = 'http://localhost:3001'; // Auto-detected
+const VIDEO_DIR = '/tmp/playwright-videos';
+const FRAMES_DIR = '/tmp/playwright-frames';
+
+(async () => {
+  // Ensure output directories exist
+  fs.mkdirSync(VIDEO_DIR, { recursive: true });
+  fs.mkdirSync(FRAMES_DIR, { recursive: true });
+
+  const browser = await chromium.launch({ headless: false, slowMo: 100 });
+
+  // Create context with video recording enabled
+  const context = await browser.newContext({
+    recordVideo: {
+      dir: VIDEO_DIR,
+      size: { width: 1280, height: 720 }
+    }
+  });
+
+  const page = await context.newPage();
+
+  // === Your automation here ===
+  await page.goto(TARGET_URL);
+  await page.waitForTimeout(2000);
+  // Add more interactions as needed
+  // ============================
+
+  // Close page and context to finalize video
+  await page.close();
+  await context.close();
+  await browser.close();
+
+  // Find the recorded video file
+  const videoFiles = fs.readdirSync(VIDEO_DIR).filter(f => f.endsWith('.webm'));
+  if (videoFiles.length === 0) {
+    console.error('No video file found');
+    process.exit(1);
+  }
+
+  const videoPath = path.join(VIDEO_DIR, videoFiles[videoFiles.length - 1]);
+  console.log(`Video saved: ${videoPath}`);
+
+  // Extract frames using ffmpeg (2 frames per second)
+  const framePattern = path.join(FRAMES_DIR, 'frame-%03d.png');
+  try {
+    execSync(`ffmpeg -y -i "${videoPath}" -vf "fps=2" "${framePattern}"`, { stdio: 'inherit' });
+    console.log(`Frames extracted to: ${FRAMES_DIR}`);
+
+    // List extracted frames for analysis
+    const frames = fs.readdirSync(FRAMES_DIR).filter(f => f.endsWith('.png')).sort();
+    console.log('\nExtracted frames for analysis:');
+    frames.forEach(f => console.log(`  /tmp/playwright-frames/${f}`));
+  } catch (e) {
+    console.error('ffmpeg not found. Install with: brew install ffmpeg (macOS) or apt install ffmpeg (Linux)');
+    console.log('Video available at:', videoPath);
+  }
+})();
+```
+
+**Notes:**
+
+- Adjust `fps=2` to extract more/fewer frames (e.g., `fps=1` for 1 per second, `fps=0.5` for every 2 seconds)
+- Claude can analyze extracted frames using the Read tool on the PNG files
+- Requires ffmpeg: `brew install ffmpeg` (macOS) or `apt install ffmpeg` (Linux)
 
 ## Inline Execution (Simple Tasks)
 
