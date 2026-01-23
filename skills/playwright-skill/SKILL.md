@@ -105,9 +105,9 @@ config = get_browser_config(use_chrome=False)  # Disable Chrome preference
 
 ```bash
 cd $SKILL_DIR
-pip install patchright
-patchright install chrome  # Recommended for better stealth
-# Or: patchright install chromium  # Fallback option
+uv pip install patchright
+uv run patchright install chrome  # Recommended for better stealth
+# Or: uv run patchright install chromium  # Fallback option
 ```
 
 This installs Patchright and Chrome browser. Only needed once.
@@ -605,8 +605,8 @@ For comprehensive Patchright/Playwright API documentation, see [API_REFERENCE.md
 
 **Patchright not installed:**
 ```bash
-pip install patchright
-patchright install chromium
+uv pip install patchright
+uv run patchright install chromium
 ```
 
 **Module not found:**

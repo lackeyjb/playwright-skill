@@ -19,7 +19,7 @@ When you start a session in Claude Code on the web, the setup hook:
 
 1. ✅ **Detects the environment** - Identifies if running locally or in the web
 2. ✅ **Installs patchright** - Uses `uv pip install patchright` for fast installation
-3. ✅ **Installs Chrome browser** - Runs `patchright install chrome` for browser binaries
+3. ✅ **Installs Chrome browser** - Runs `uv run patchright install chrome` for browser binaries
 4. ✅ **Configures Python path** - Adds skill directory to `PYTHONPATH`
 5. ✅ **Persists environment** - Sets `CHROME_EXECUTABLE` and other variables for the session
 
@@ -45,7 +45,7 @@ cd skills/playwright-skill
 uv pip install patchright
 
 # Install Chrome browser
-patchright install chrome
+uv run patchright install chrome
 ```
 
 ## Repository Structure
@@ -175,9 +175,9 @@ Releases are automated via GitHub Actions:
 - Check network connectivity (requires downloading browser binaries)
 
 ### Chrome Installation Fails
-- Manually install: `python -m patchright install chrome`
+- Manually install: `uv run patchright install chrome`
 - Check disk space (Chrome requires ~200MB)
-- Try Chromium as fallback: `python -m patchright install chromium`
+- Try Chromium as fallback: `uv run patchright install chromium`
 
 ### Import Errors
 - Verify `PYTHONPATH` includes skill directory

@@ -97,7 +97,7 @@ else
 fi
 
 if [ "$CHROME_INSTALLED" = false ]; then
-    python3 -m patchright install chrome || {
+    uv run patchright install chrome || {
         log_error "Failed to install Chrome via patchright"
         exit 2
     }

@@ -80,7 +80,7 @@ def install_patchright():
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install Patchright: {e}")
         installer = "uv pip" if use_uv else "pip"
-        print(f"Please run manually: {installer} install patchright && patchright install chromium")
+        print(f"Please run manually: {installer} install patchright && uv run patchright install chromium")
         return False
 
 

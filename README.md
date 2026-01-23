@@ -63,7 +63,7 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 ```bash
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 uv pip install patchright
-patchright install chrome
+uv run patchright install chrome
 ```
 
 Verify installation by running `/help` to confirm the skill is available.
@@ -89,7 +89,7 @@ cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 # Navigate to the skill and run setup (required for standalone)
 cd ~/.claude/skills/playwright-skill
 uv pip install patchright
-patchright install chrome
+uv run patchright install chrome
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -108,7 +108,7 @@ cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 # Navigate to the skill and run setup (required for standalone)
 cd .claude/skills/playwright-skill
 uv pip install patchright
-patchright install chrome
+uv run patchright install chrome
 
 # Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
@@ -156,7 +156,7 @@ The repository includes `.claude/settings.json` which configures the SessionStar
    ```bash
    cd ~/.claude/skills/playwright-skill  # or your project path
    uv pip install patchright
-   patchright install chrome
+   uv run patchright install chrome
    ```
 
 ---
@@ -211,7 +211,7 @@ cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 uv pip install patchright
 
 # Install Chrome browser
-patchright install chrome
+uv run patchright install chrome
 ```
 
 ---
@@ -257,7 +257,7 @@ cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 uv pip install --upgrade patchright
 
 # Update Chrome browser if needed
-patchright install chrome --force
+uv run patchright install chrome --force
 ```
 
 ### Check Version
@@ -458,7 +458,7 @@ It's a drop-in replacement for Playwright - just change imports from `playwright
 
 - Python >= 3.10
 - Patchright (installed via `uv pip install patchright`)
-- Chrome (installed via `patchright install chrome`)
+- Chrome (installed via `uv run patchright install chrome`)
 
 ## Troubleshooting
 
@@ -466,7 +466,7 @@ It's a drop-in replacement for Playwright - just change imports from `playwright
 Navigate to the skill directory and run:
 ```bash
 uv pip install patchright
-patchright install chrome
+uv run patchright install chrome
 ```
 
 **Module not found errors?**
@@ -476,7 +476,7 @@ Ensure automation runs via `run.py`, which handles module resolution.
 Verify `headless=False` is set. The skill defaults to visible browser unless headless mode is requested.
 
 **Bot detection still triggered?**
-- Ensure Chrome is installed (`patchright install chrome`) - it's more stealthy than Chromium
+- Ensure Chrome is installed (`uv run patchright install chrome`) - it's more stealthy than Chromium
 - Use `headless=False` (visible browser) when possible
 - Avoid custom user agents and fingerprint modifications
 

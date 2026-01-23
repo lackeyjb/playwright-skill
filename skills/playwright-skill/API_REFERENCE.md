@@ -38,8 +38,8 @@ Before using this skill, ensure Patchright is available:
 python3 -c "import patchright; print('Patchright installed')" 2>/dev/null || echo "Patchright not installed"
 
 # Install (if needed)
-pip install patchright
-patchright install chromium
+uv pip install patchright
+uv run patchright install chromium
 ```
 
 ### Basic Configuration
@@ -644,8 +644,9 @@ jobs:
           python-version: "3.13"
       - name: Install dependencies
         run: |
-          pip install patchright pytest pytest-asyncio
-          patchright install chromium
+          pip install uv
+          uv pip install patchright pytest pytest-asyncio
+          uv run patchright install chromium
       - name: Run tests
         run: pytest tests/ -v
 ```
@@ -714,11 +715,11 @@ await page.click("button.trigger-alert")
 
 ```bash
 # Install Patchright
-pip install patchright
+uv pip install patchright
 
 # Install browsers
-patchright install chromium
-patchright install chrome  # System Chrome (recommended for stealth)
+uv run patchright install chromium
+uv run patchright install chrome  # System Chrome (recommended for stealth)
 
 # Run with debug
 PWDEBUG=1 python3 your_script.py
