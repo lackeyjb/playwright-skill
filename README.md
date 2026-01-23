@@ -8,14 +8,29 @@ Claude autonomously decides when to use this skill based on your browser automat
 
 Made using Claude Code.
 
+## What is a Skill?
+
+[Agent Skills](https://agentskills.io) are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently. When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
+
+This Playwright skill implements the [open Agent Skills specification](https://agentskills.io), making it compatible across agent platforms.
+
 ## Features
 
 - **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
+- **Configurable Browser** - Use Playwright's bundled Chromium, or your installed browser (Chrome, Edge, Brave, Firefox, WebKit)
 - **Visible Browser by Default** - See automation in real-time with `headless: false`
 - **Zero Module Resolution Errors** - Universal executor ensures proper module access
 - **Progressive Disclosure** - Concise SKILL.md with full API reference loaded only when needed
 - **Safe Cleanup** - Smart temp file management without race conditions
 - **Comprehensive Helpers** - Optional utility functions for common tasks
+
+## How It Works
+
+1. Describe what you want to test or automate
+2. Claude writes custom Playwright code for the task
+3. The universal executor (run.js) runs it with proper module resolution
+4. Browser opens (visible by default) and automation executes
+5. Results are displayed with console output and screenshots
 
 ## Installation
 
@@ -156,22 +171,83 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 "Test form validation"
 ```
 
-## How It Works
-
-1. Describe what you want to test or automate
-2. Claude writes custom Playwright code for the task
-3. The universal executor (run.js) runs it with proper module resolution
-4. Browser opens (visible by default) and automation executes
-5. Results are displayed with console output and screenshots
-
 ## Configuration
 
-Default settings:
+Configure your preferred browser by creating `.claude/playwright.local.json` in your project.
 
-- **Headless:** `false` (browser visible unless explicitly requested otherwise)
-- **Slow Motion:** `100ms` for visibility
-- **Timeout:** `30s`
-- **Screenshots:** Saved to `/tmp/`
+### Configuration Options
+
+| Option | Values | Description | Default |
+|--------|--------|-------------|---------|
+| `browser` | `chromium`, `firefox`, `webkit` | Browser engine | `chromium` |
+| `channel` | `chrome`, `msedge`, etc. | Use installed Chrome/Edge | none |
+| `headless` | `true`, `false` | Run without visible window | `false` |
+| `executablePath` | Path string | Custom browser executable | none |
+| `slowMo` | Number (ms) | Slow down operations | `0` |
+
+### Example Configurations
+
+**Using Playwright's bundled Chromium (default):**
+```json
+{
+  "browser": "chromium",
+  "headless": false
+}
+```
+
+**Using Chrome or Edge (via channel):**
+```json
+{
+  "browser": "chromium",
+  "channel": "chrome",
+  "headless": false
+}
+```
+
+**Using Brave (via executablePath):**
+```json
+{
+  "browser": "chromium",
+  "headless": false,
+  "executablePath": "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+  "slowMo": 50
+}
+```
+
+### Browser Channels (Chromium)
+
+Instead of downloading Playwright's bundled Chromium, use your installed browser:
+
+- `chrome` - Google Chrome
+- `msedge` - Microsoft Edge
+- `chrome-beta`, `chrome-dev`, `chrome-canary` - Chrome pre-release
+- `msedge-beta`, `msedge-dev` - Edge pre-release
+
+### Using Brave Browser
+
+Brave requires `executablePath` since it's not a standard Playwright channel:
+
+| Platform | Path |
+|----------|------|
+| macOS | `/Applications/Brave Browser.app/Contents/MacOS/Brave Browser` |
+| Linux | `/usr/bin/brave-browser` |
+| Windows | `C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe` |
+
+### Using Firefox or WebKit
+
+```json
+{ "browser": "firefox" }
+```
+
+```json
+{ "browser": "webkit" }
+```
+
+Note: Firefox and WebKit require their respective Playwright browser installations:
+```bash
+cd ~/.claude/skills/playwright-skill  # or your install path
+npm run install-all-browsers
+```
 
 ## Project Structure
 
@@ -185,8 +261,8 @@ playwright-skill/
 │       ├── SKILL.md         # What Claude reads
 │       ├── run.js           # Universal executor (proper module resolution)
 │       ├── package.json     # Dependencies & setup scripts
-│       └── lib/
-│           └── helpers.js   # Optional utility functions
+│       ├── lib/
+│       │   └── helpers.js   # Optional utility functions
 │       └── API_REFERENCE.md # Full Playwright API reference
 ├── README.md                # This file - user documentation
 ├── CONTRIBUTING.md          # Contribution guidelines
@@ -197,12 +273,6 @@ playwright-skill/
 
 Claude will automatically load `API_REFERENCE.md` when needed for comprehensive documentation on selectors, network interception, authentication, visual regression testing, mobile emulation, performance testing, and debugging.
 
-## Dependencies
-
-- Node.js
-- Playwright (installed via `npm run setup`)
-- Chromium (installed via `npm run setup`)
-
 ## Troubleshooting
 
 **Playwright not installed?**
@@ -212,16 +282,19 @@ Navigate to the skill directory and run `npm run setup`.
 Ensure automation runs via `run.js`, which handles module resolution.
 
 **Browser doesn't open?**
-Verify `headless: false` is set. The skill defaults to visible browser unless headless mode is requested.
+Check `headless: false` in your `.claude/playwright.local.json` config.
+
+**Browser executable not found?**
+Verify the `executablePath` in your config points to a valid browser installation.
 
 **Install all browsers?**
 Run `npm run install-all-browsers` from the skill directory.
 
-## What is a Skill?
+## Dependencies
 
-[Agent Skills](https://agentskills.io) are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently. When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
-
-This Playwright skill implements the [open Agent Skills specification](https://agentskills.io), making it compatible across agent platforms.
+- **Node.js** >= 14.0.0
+- **Playwright** (installed via `npm run setup`)
+- **Browser** - Chromium bundled by default, or configure your preferred browser
 
 ## Contributing
 
