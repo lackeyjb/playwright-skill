@@ -17,6 +17,58 @@ Made using Claude Code.
 - **Safe Cleanup** - Smart temp file management without race conditions
 - **Comprehensive Helpers** - Optional utility functions for common tasks
 
+## Why This Skill?
+
+You might be wondering how this compares to MCP-based alternatives like [playwright-mcp](https://github.com/executeautomation/playwright-mcp) or [browser-tools](https://browsertools.ai/). Here's a balanced comparison:
+
+### Skills vs MCPs: Different Approaches
+
+| Aspect | Skills | MCPs |
+|--------|--------|------|
+| **Architecture** | Native Claude feature; instructions loaded directly | External server exposing tools via protocol |
+| **Context usage** | Progressive disclosure - loads only what's needed | Tool definitions loaded when server connected |
+| **Flexibility** | Claude writes custom code for each task | Pre-built tool functions with fixed parameters |
+| **Setup** | Drop-in folder, no running processes | Requires server process management |
+
+### Token Usage Comparison
+
+Skills and MCPs load different types of content into context:
+
+| Approach | What's Loaded | Approximate Size |
+|----------|---------------|------------------|
+| **This skill** | SKILL.md (instructions + examples) | ~3.5K tokens |
+| **This skill** (advanced) | + API_REFERENCE.md | +~4K tokens |
+| **playwright-mcp** | Tool schemas (~15 tools × ~200-300 tokens each) | ~3-5K tokens |
+
+**Key differences:**
+
+- **Skills load instructions** - Claude reads how to write Playwright code and generates custom scripts
+- **MCPs load tool schemas** - Claude sees available functions and their parameters
+
+**Note:** Claude Code now supports [dynamic tool loading](https://www.anthropic.com/engineering/advanced-tool-use) for MCPs, so tools are loaded on-demand rather than all upfront. Both approaches have comparable context efficiency for typical tasks.
+
+**The real tradeoff isn't tokens** - it's whether you want Claude to call pre-built functions (MCP) or write custom code for your specific task (skill).
+
+### When to Choose This Skill
+
+- **Custom automation** - You want Claude to write tailored Playwright code rather than calling pre-built functions
+- **Progressive disclosure** - SKILL.md loaded initially; API reference loaded on-demand only when needed
+- **Visible browser by default** - See what's happening in real-time
+- **Simpler setup** - No separate server process to manage
+- **Learning/debugging** - Generated scripts in `/tmp` can be inspected, modified, and re-run
+
+### When MCPs Might Be Better
+
+- **Structured tool calls** - You prefer discrete, pre-defined operations over generated code
+- **Existing MCP infrastructure** - You're already using MCPs extensively
+- **Specific MCP features** - Some MCPs offer unique capabilities (e.g., specialized debugging tools)
+
+### The Skills Philosophy
+
+This skill follows the [Agent Skills](https://agentskills.io) approach: give Claude instructions and let it write custom code for your specific task. Instead of calling `takeScreenshot(url, options)`, Claude writes a complete Playwright script tailored to exactly what you asked for.
+
+Both approaches are valid - choose based on your workflow preferences.
+
 ## Installation
 
 This repository is structured as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) containing a skill. You can install it as either a **plugin** (recommended) or extract it as a **standalone skill**.
