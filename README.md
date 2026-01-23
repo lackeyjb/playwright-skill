@@ -173,7 +173,7 @@ After installation, simply ask Claude to test or automate any browser task. Clau
 
 ## Configuration
 
-Configure your preferred browser by creating `.claude/playwright.local.md` in your project.
+Configure your preferred browser by creating `.claude/playwright.local.json` in your project.
 
 ### Configuration Options
 
@@ -188,30 +188,30 @@ Configure your preferred browser by creating `.claude/playwright.local.md` in yo
 ### Example Configurations
 
 **Using Playwright's bundled Chromium (default):**
-```markdown
----
-browser: chromium
-headless: false
----
+```json
+{
+  "browser": "chromium",
+  "headless": false
+}
 ```
 
 **Using Chrome or Edge (via channel):**
-```markdown
----
-browser: chromium
-channel: chrome
-headless: false
----
+```json
+{
+  "browser": "chromium",
+  "channel": "chrome",
+  "headless": false
+}
 ```
 
 **Using Brave (via executablePath):**
-```markdown
----
-browser: chromium
-headless: false
-executablePath: /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
-slowMo: 50
----
+```json
+{
+  "browser": "chromium",
+  "headless": false,
+  "executablePath": "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+  "slowMo": 50
+}
 ```
 
 ### Browser Channels (Chromium)
@@ -235,12 +235,12 @@ Brave requires `executablePath` since it's not a standard Playwright channel:
 
 ### Using Firefox or WebKit
 
-```yaml
-browser: firefox
+```json
+{ "browser": "firefox" }
 ```
 
-```yaml
-browser: webkit
+```json
+{ "browser": "webkit" }
 ```
 
 Note: Firefox and WebKit require their respective Playwright browser installations:
@@ -282,7 +282,7 @@ Navigate to the skill directory and run `npm run setup`.
 Ensure automation runs via `run.js`, which handles module resolution.
 
 **Browser doesn't open?**
-Check `headless: false` in your `.claude/playwright.local.md` config.
+Check `headless: false` in your `.claude/playwright.local.json` config.
 
 **Browser executable not found?**
 Verify the `executablePath` in your config points to a valid browser installation.

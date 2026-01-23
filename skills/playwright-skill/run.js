@@ -148,14 +148,14 @@ function wrapCodeIfNeeded(code) {
 const { chromium, firefox, webkit, devices } = require('playwright');
 const helpers = require('./lib/helpers');
 
-// Browser configuration from .claude/playwright.local.md (if exists)
+// Browser configuration from .claude/playwright.local.json (if exists)
 const __browserConfig = helpers.readBrowserConfig();
 
 // Extra headers from environment variables (if configured)
 const __extraHeaders = helpers.getExtraHeadersFromEnv();
 
 /**
- * Get browser configuration from .claude/playwright.local.md
+ * Get browser configuration from .claude/playwright.local.json
  * Returns: { browser, channel, headless, executablePath, slowMo }
  */
 function getBrowserConfig() {
@@ -163,7 +163,7 @@ function getBrowserConfig() {
 }
 
 /**
- * Launch browser using configuration from .claude/playwright.local.md
+ * Launch browser using configuration from .claude/playwright.local.json
  * Automatically uses configured browser type, channel, and executable path.
  * @param {Object} options - Additional options to override config
  */

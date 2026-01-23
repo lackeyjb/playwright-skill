@@ -50,25 +50,25 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 
 ## Browser Configuration
 
-Users can configure their preferred browser by creating `.claude/playwright.local.md` in their project:
+Users can configure their preferred browser by creating `.claude/playwright.local.json` in their project:
 
-```markdown
----
-browser: chromium
-headless: false
-executablePath: /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
-slowMo: 50
----
+```json
+{
+  "browser": "chromium",
+  "headless": false,
+  "executablePath": "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+  "slowMo": 50
+}
 ```
 
 Or use a standard Playwright channel like Chrome or Edge:
 
-```markdown
----
-browser: chromium
-channel: chrome
-headless: false
----
+```json
+{
+  "browser": "chromium",
+  "channel": "chrome",
+  "headless": false
+}
 ```
 
 **Configuration options:**
@@ -88,11 +88,11 @@ headless: false
 - `msedge-beta`, `msedge-dev` - Edge pre-release
 
 **For Brave Browser:** Use `executablePath` since Brave isn't a standard Playwright channel:
-```yaml
-executablePath: /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
+```json
+{ "executablePath": "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" }
 ```
 
-**IMPORTANT:** When a config file exists, scripts should use `launchConfiguredBrowser()` instead of `chromium.launch()` to respect user preferences.
+**IMPORTANT:** When a config file exists, scripts should use `launchConfiguredBrowser()` instead of `chromium.launch()` to respect user preferences from `.claude/playwright.local.json`.
 
 ## Setup (First Time)
 
@@ -118,7 +118,7 @@ cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => 
 // Parameterized URL (detected or user-provided)
 const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
 
-// launchConfiguredBrowser() reads from .claude/playwright.local.md
+// launchConfiguredBrowser() reads from .claude/playwright.local.json
 const browser = await launchConfiguredBrowser();
 const page = await browser.newPage();
 
@@ -131,7 +131,7 @@ console.log('📸 Screenshot saved to /tmp/screenshot.png');
 await browser.close();
 ```
 
-**Note:** Scripts without `require()` are auto-wrapped with helpers. Use `launchConfiguredBrowser()` to respect user's browser preferences from `.claude/playwright.local.md`.
+**Note:** Scripts without `require()` are auto-wrapped with helpers. Use `launchConfiguredBrowser()` to respect user's browser preferences from `.claude/playwright.local.json`.
 
 **Step 3: Execute from skill directory**
 
@@ -311,7 +311,7 @@ await browser.close();
 For quick one-off tasks, you can execute code inline without creating files:
 
 ```bash
-# Take a quick screenshot (uses browser from .claude/playwright.local.md)
+# Take a quick screenshot (uses browser from .claude/playwright.local.json)
 cd $SKILL_DIR && node run.js "
 const browser = await launchConfiguredBrowser();
 const page = await browser.newPage();
@@ -334,11 +334,11 @@ Optional utility functions in `lib/helpers.js`:
 ```javascript
 const helpers = require('./lib/helpers');
 
-// Read browser config from .claude/playwright.local.md
+// Read browser config from .claude/playwright.local.json
 const config = helpers.readBrowserConfig();
 console.log('Browser config:', config);
 
-// Launch browser with config (auto-reads .claude/playwright.local.md)
+// Launch browser with config (auto-reads .claude/playwright.local.json)
 const browser = await helpers.launchBrowser();
 // Or specify options: helpers.launchBrowser('chromium', { channel: 'brave' })
 
@@ -427,7 +427,7 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 ## Tips
 
 - **CRITICAL: Detect servers FIRST** - Always run `detectDevServers()` before writing test code for localhost testing
-- **Respect user's browser config** - Always use `launchConfiguredBrowser()` to honor `.claude/playwright.local.md` settings
+- **Respect user's browser config** - Always use `launchConfiguredBrowser()` to honor `.claude/playwright.local.json` settings
 - **Custom headers** - Use `PW_HEADER_NAME`/`PW_HEADER_VALUE` env vars to identify automated traffic to your backend
 - **Use /tmp for test files** - Write to `/tmp/playwright-test-*.js`, never to skill directory or user's project
 - **Parameterize URLs** - Put detected/provided URL in a `TARGET_URL` constant at the top of every script
@@ -449,16 +449,16 @@ cd $SKILL_DIR && npm run setup
 Ensure running from skill directory via `run.js` wrapper
 
 **Browser doesn't open:**
-Check `headless: false` in `.claude/playwright.local.md` and ensure display available
+Check `"headless": false` in `.claude/playwright.local.json` and ensure display available
 
 **Browser executable not found:**
-Verify the `executablePath` in `.claude/playwright.local.md` points to a valid browser:
+Verify the `executablePath` in `.claude/playwright.local.json` points to a valid browser:
 - macOS Brave: `/Applications/Brave Browser.app/Contents/MacOS/Brave Browser`
 - Linux Brave: `/usr/bin/brave-browser`
 - Windows Brave: `C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe`
 
 **Config not being read:**
-Config file must be at `.claude/playwright.local.md` in your project (searches upward from cwd)
+Config file must be at `.claude/playwright.local.json` in your project (searches upward from cwd)
 
 **Element not found:**
 Add wait: `await page.waitForSelector('.element', { timeout: 10000 })`

@@ -6,17 +6,17 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Read browser configuration from .claude/playwright.local.md
+ * Read browser configuration from .claude/playwright.local.json
  * Searches from current working directory upward to find config file.
  *
- * Config file format (YAML frontmatter):
- * ---
- * browser: chromium | firefox | webkit
- * channel: chrome | msedge | chrome-beta | msedge-beta | brave
- * headless: true | false
- * executablePath: /path/to/browser
- * slowMo: 100
- * ---
+ * Config file format (JSON):
+ * {
+ *   "browser": "chromium" | "firefox" | "webkit",
+ *   "channel": "chrome" | "msedge" | "chrome-beta" | "msedge-beta" | "brave",
+ *   "headless": true | false,
+ *   "executablePath": "/path/to/browser",
+ *   "slowMo": 100
+ * }
  *
  * @param {string} startDir - Directory to start searching from (defaults to cwd)
  * @returns {Object} Browser configuration with defaults applied
@@ -37,7 +37,7 @@ function readBrowserConfig(startDir = process.cwd()) {
 
   try {
     const content = fs.readFileSync(configPath, 'utf8');
-    const config = parseYamlFrontmatter(content);
+    const config = JSON.parse(content);
 
     console.log(`📋 Loaded browser config from: ${configPath}`);
 
@@ -72,7 +72,7 @@ function readBrowserConfig(startDir = process.cwd()) {
 }
 
 /**
- * Find playwright.local.md config file by searching upward from startDir
+ * Find playwright.local.json config file by searching upward from startDir
  * @param {string} startDir - Directory to start searching from
  * @returns {string|null} Path to config file or null if not found
  */
@@ -81,7 +81,7 @@ function findConfigFile(startDir) {
   const root = path.parse(currentDir).root;
 
   while (currentDir !== root) {
-    const configPath = path.join(currentDir, '.claude', 'playwright.local.md');
+    const configPath = path.join(currentDir, '.claude', 'playwright.local.json');
     if (fs.existsSync(configPath)) {
       return configPath;
     }
@@ -89,47 +89,6 @@ function findConfigFile(startDir) {
   }
 
   return null;
-}
-
-/**
- * Parse YAML frontmatter from markdown content
- * @param {string} content - File content with optional YAML frontmatter
- * @returns {Object} Parsed frontmatter or empty object
- */
-function parseYamlFrontmatter(content) {
-  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!frontmatterMatch) {
-    return {};
-  }
-
-  const yaml = frontmatterMatch[1];
-  const result = {};
-
-  // Simple YAML parser for key: value pairs
-  const lines = yaml.split('\n');
-  for (const line of lines) {
-    const match = line.match(/^(\w+):\s*(.*)$/);
-    if (match) {
-      const key = match[1];
-      let value = match[2].trim();
-
-      // Parse value types
-      if (value === 'true') value = true;
-      else if (value === 'false') value = false;
-      else if (value === 'null' || value === '') value = null;
-      else if (/^\d+$/.test(value)) value = parseInt(value, 10);
-      else if (/^\d+\.\d+$/.test(value)) value = parseFloat(value);
-      // Remove quotes if present
-      else if ((value.startsWith('"') && value.endsWith('"')) ||
-               (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-
-      result[key] = value;
-    }
-  }
-
-  return result;
 }
 
 /**
@@ -165,7 +124,7 @@ function getExtraHeadersFromEnv() {
 }
 
 /**
- * Launch browser with configuration from .claude/playwright.local.md or options
+ * Launch browser with configuration from .claude/playwright.local.json or options
  *
  * Supports Chromium channels for using installed browsers like:
  * - 'chrome' (Google Chrome)
@@ -181,7 +140,7 @@ function getExtraHeadersFromEnv() {
  * @param {boolean} options.useConfig - Whether to read from config file (default: true)
  */
 async function launchBrowser(browserType = 'chromium', options = {}) {
-  // Read config from .claude/playwright.local.md unless disabled
+  // Read config from .claude/playwright.local.json unless disabled
   const config = options.useConfig !== false ? readBrowserConfig() : {};
 
   // Merge config with options (options take precedence)
@@ -598,7 +557,6 @@ module.exports = {
   // Browser configuration
   readBrowserConfig,
   findConfigFile,
-  parseYamlFrontmatter,
   // Browser management
   launchBrowser,
   createPage,
