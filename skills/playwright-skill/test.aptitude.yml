@@ -1,0 +1,17 @@
+name: "Playwright"
+prompt: "/playwright-skill automate a task by going to 'https://github.com/microsoft/playwright' and getting the current semantic version of Playwright"
+assertions:
+
+  # Should use playwright-skill, not web search
+  - tool: WebSearch
+    called: false
+
+  # Writes a script to /tmp/
+  - tool: Write
+    params:
+      file_path: "/tmp/.*"
+
+  # Runs the playwright skill with node run.js
+  - tool: Bash
+    params:
+      command: ".*\\.claude/skills/playwright-skill && node run\\.js.*"
