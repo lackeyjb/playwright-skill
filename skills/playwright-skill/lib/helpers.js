@@ -1,12 +1,17 @@
 // playwright-helpers.js
 // Optional utility functions for use in @playwright/test custom fixtures and helpers.
 //
-// USAGE: These helpers are NOT auto-injected. Import explicitly in your test files:
+// USAGE: NOT auto-injected. Import explicitly where needed:
 //   const { extractTexts, retryWithBackoff } = require('../../.claude/skills/playwright-skill/lib/helpers');
 //
-// Note: Browser/context/page management (launchBrowser, createContext, createPage) is
-// handled by the @playwright/test runner via fixtures. Use those helpers only if you
-// need a browser instance outside of a test fixture (e.g., global setup scripts).
+// RECOMMENDED functions: extractTexts, retryWithBackoff, safeClick, safeType,
+//   extractTableData, handleCookieBanner, takeScreenshot
+//
+// LEGACY / LOW VALUE for @playwright/test suites:
+//   - launchBrowser, createContext, createPage: browser lifecycle is managed by
+//     the @playwright/test runner via fixtures — only use these in globalSetup scripts
+//   - getExtraHeadersFromEnv, createContext header merging: use playwright.config.ts
+//     `use.extraHTTPHeaders` instead of environment variable injection
 
 const { chromium, firefox, webkit } = require('@playwright/test');
 
@@ -122,29 +127,10 @@ async function waitForPageReady(page, options = {}) {
  * @param {Object} options - Click options
  */
 async function safeClick(page, selector, options = {}) {
-  const maxRetries = options.retries || 3;
-  const retryDelay = options.retryDelay || 1000;
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      await page.waitForSelector(selector, { 
-        state: 'visible',
-        timeout: options.timeout || 5000 
-      });
-      await page.click(selector, {
-        force: options.force || false,
-        timeout: options.timeout || 5000
-      });
-      return true;
-    } catch (e) {
-      if (i === maxRetries - 1) {
-        console.error(`Failed to click ${selector} after ${maxRetries} attempts`);
-        throw e;
-      }
-      console.log(`Retry ${i + 1}/${maxRetries} for clicking ${selector}`);
-      await page.waitForTimeout(retryDelay);
-    }
-  }
+  const locator = page.locator(selector);
+  await locator.waitFor({ state: 'visible', timeout: options.timeout || 5000 });
+  await locator.click({ force: options.force || false, timeout: options.timeout || 5000 });
+  return true;
 }
 
 /**
@@ -155,19 +141,17 @@ async function safeClick(page, selector, options = {}) {
  * @param {Object} options - Type options
  */
 async function safeType(page, selector, text, options = {}) {
-  await page.waitForSelector(selector, { 
-    state: 'visible',
-    timeout: options.timeout || 10000 
-  });
-  
+  const locator = page.locator(selector);
+  await locator.waitFor({ state: 'visible', timeout: options.timeout || 10000 });
+
   if (options.clear !== false) {
-    await page.fill(selector, '');
+    await locator.fill('');
   }
-  
+
   if (options.slow) {
-    await page.type(selector, text, { delay: options.delay || 100 });
+    await locator.pressSequentially(text, { delay: options.delay || 100 });
   } else {
-    await page.fill(selector, text);
+    await locator.fill(text);
   }
 }
 
@@ -177,8 +161,9 @@ async function safeType(page, selector, text, options = {}) {
  * @param {string} selector - Elements selector
  */
 async function extractTexts(page, selector) {
-  await page.waitForSelector(selector, { timeout: 10000 });
-  return await page.$$eval(selector, elements => 
+  const locator = page.locator(selector);
+  await locator.first().waitFor({ timeout: 10000 });
+  return await locator.evaluateAll(elements =>
     elements.map(el => el.textContent?.trim()).filter(Boolean)
   );
 }
@@ -213,22 +198,25 @@ async function authenticate(page, credentials, selectors = {}) {
   const defaultSelectors = {
     username: 'input[name="username"], input[name="email"], #username, #email',
     password: 'input[name="password"], #password',
-    submit: 'button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Sign in")'
+    submit: 'button[type="submit"], input[type="submit"]',
   };
-  
+
   const finalSelectors = { ...defaultSelectors, ...selectors };
-  
+
   await safeType(page, finalSelectors.username, credentials.username);
   await safeType(page, finalSelectors.password, credentials.password);
   await safeClick(page, finalSelectors.submit);
-  
-  // Wait for navigation or success indicator
-  await Promise.race([
-    page.waitForNavigation({ waitUntil: 'networkidle' }),
-    page.waitForSelector(selectors.successIndicator || '.dashboard, .user-menu, .logout', { timeout: 10000 })
-  ]).catch(() => {
-    console.log('Login might have completed without navigation');
-  });
+
+  // Wait for URL change indicating successful navigation post-login
+  if (selectors.successURL) {
+    await page.waitForURL(selectors.successURL, { timeout: 10000 });
+  } else if (selectors.successIndicator) {
+    await page.locator(selectors.successIndicator).waitFor({ timeout: 10000 });
+  } else {
+    // Fall back to waiting for any URL change from the login page
+    await page.waitForURL(url => !url.pathname.includes('login'), { timeout: 10000 })
+      .catch(() => { console.log('Login navigation not detected — continuing'); });
+  }
 }
 
 /**
@@ -252,7 +240,8 @@ async function scrollPage(page, direction = 'down', distance = 500) {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       break;
   }
-  await page.waitForTimeout(500); // Wait for scroll animation
+  // Scroll is synchronous in the browser — no timeout needed.
+  // If you're waiting for content to load after scroll, use waitForResponse or waitForSelector.
 }
 
 /**
