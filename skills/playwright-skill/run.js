@@ -1,228 +1,154 @@
 #!/usr/bin/env node
 /**
- * Universal Playwright Executor for Claude Code
+ * Playwright E2E Test Runner for CI
  *
- * Executes Playwright automation code from:
- * - File path: node run.js script.js
- * - Inline code: node run.js 'await page.goto("...")'
- * - Stdin: cat script.js | node run.js
- *
- * Ensures proper module resolution by running from skill directory.
+ * Runs @playwright/test suites in a target project:
+ *   node run.js <project-dir>                         # Run all tests
+ *   node run.js <project-dir>/e2e/homepage.spec.ts    # Run specific file
+ *   node run.js <project-dir> --headed                # Run with visible browser
+ *   node run.js <project-dir> --reporter=html         # Custom reporter
+ *   node run.js <project-dir> --grep "login"          # Filter by test name
  */
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
-
-// Change to skill directory for proper module resolution
-process.chdir(__dirname);
+const { spawnSync } = require('child_process');
 
 /**
- * Check if Playwright is installed
+ * Walk up directories to find the project root (first dir with package.json)
  */
-function checkPlaywrightInstalled() {
-  try {
-    require.resolve('playwright');
-    return true;
-  } catch (e) {
-    return false;
+function findProjectRoot(startPath) {
+  let dir = path.resolve(startPath);
+
+  if (fs.existsSync(dir) && fs.statSync(dir).isFile()) {
+    dir = path.dirname(dir);
   }
+
+  while (true) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // filesystem root
+    dir = parent;
+  }
+
+  return null;
 }
 
 /**
- * Install Playwright if missing
+ * Check if @playwright/test is installed in the project
  */
-function installPlaywright() {
-  console.log('📦 Playwright not found. Installing...');
-  try {
-    execSync('npm install', { stdio: 'inherit', cwd: __dirname });
-    execSync('npx playwright install chromium', { stdio: 'inherit', cwd: __dirname });
-    console.log('✅ Playwright installed successfully');
-    return true;
-  } catch (e) {
-    console.error('❌ Failed to install Playwright:', e.message);
-    console.error('Please run manually: cd', __dirname, '&& npm run setup');
-    return false;
-  }
+function hasPlaywrightTest(projectDir) {
+  return fs.existsSync(
+    path.join(projectDir, 'node_modules', '@playwright', 'test', 'package.json'),
+  );
 }
 
 /**
- * Get code to execute from various sources
+ * Check if playwright.config.ts/js exists in the project
  */
-function getCodeToExecute() {
+function findPlaywrightConfig(projectDir) {
+  for (const name of ['playwright.config.ts', 'playwright.config.js', 'playwright.config.mjs']) {
+    const p = path.join(projectDir, name);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+function printUsage() {
+  console.log('Usage:');
+  console.log('  node run.js <project-dir>                    Run all E2E tests');
+  console.log('  node run.js <project-dir>/<spec>.spec.ts     Run a specific spec file');
+  console.log('  node run.js <project-dir> --headed           Run with visible browser');
+  console.log('  node run.js <project-dir> --grep "name"      Filter tests by name');
+  console.log('  node run.js <project-dir> --reporter=html    Use HTML reporter');
+  console.log('');
+  console.log('Examples:');
+  console.log('  node run.js ~/myapp');
+  console.log('  node run.js ~/myapp/e2e/auth.spec.ts');
+  console.log('  node run.js ~/myapp --headed --grep "login"');
+}
+
+function main() {
   const args = process.argv.slice(2);
 
-  // Case 1: File path provided
-  if (args.length > 0 && fs.existsSync(args[0])) {
-    const filePath = path.resolve(args[0]);
-    console.log(`📄 Executing file: ${filePath}`);
-    return fs.readFileSync(filePath, 'utf8');
+  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+    printUsage();
+    process.exit(args.length === 0 ? 1 : 0);
   }
 
-  // Case 2: Inline code provided as argument
-  if (args.length > 0) {
-    console.log('⚡ Executing inline code');
-    return args.join(' ');
-  }
+  const target = args[0];
+  const extraArgs = args.slice(1);
 
-  // Case 3: Code from stdin
-  if (!process.stdin.isTTY) {
-    console.log('📥 Reading from stdin');
-    return fs.readFileSync(0, 'utf8');
-  }
-
-  // No input
-  console.error('❌ No code to execute');
-  console.error('Usage:');
-  console.error('  node run.js script.js          # Execute file');
-  console.error('  node run.js "code here"        # Execute inline');
-  console.error('  cat script.js | node run.js    # Execute from stdin');
-  process.exit(1);
-}
-
-/**
- * Clean up old temporary execution files from previous runs
- */
-function cleanupOldTempFiles() {
-  try {
-    const files = fs.readdirSync(__dirname);
-    const tempFiles = files.filter(f => f.startsWith('.temp-execution-') && f.endsWith('.js'));
-
-    if (tempFiles.length > 0) {
-      tempFiles.forEach(file => {
-        const filePath = path.join(__dirname, file);
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          // Ignore errors - file might be in use or already deleted
-        }
-      });
-    }
-  } catch (e) {
-    // Ignore directory read errors
-  }
-}
-
-/**
- * Wrap code in async IIFE if not already wrapped
- */
-function wrapCodeIfNeeded(code) {
-  // Check if code already has require() and async structure
-  const hasRequire = code.includes('require(');
-  const hasAsyncIIFE = code.includes('(async () => {') || code.includes('(async()=>{');
-
-  // If it's already a complete script, return as-is
-  if (hasRequire && hasAsyncIIFE) {
-    return code;
-  }
-
-  // If it's just Playwright commands, wrap in full template
-  if (!hasRequire) {
-    return `
-const { chromium, firefox, webkit, devices } = require('playwright');
-const helpers = require('./lib/helpers');
-
-// Extra headers from environment variables (if configured)
-const __extraHeaders = helpers.getExtraHeadersFromEnv();
-
-/**
- * Utility to merge environment headers into context options.
- * Use when creating contexts with raw Playwright API instead of helpers.createContext().
- * @param {Object} options - Context options
- * @returns {Object} Options with extraHTTPHeaders merged in
- */
-function getContextOptionsWithHeaders(options = {}) {
-  if (!__extraHeaders) return options;
-  return {
-    ...options,
-    extraHTTPHeaders: {
-      ...__extraHeaders,
-      ...(options.extraHTTPHeaders || {})
-    }
-  };
-}
-
-(async () => {
-  try {
-    ${code}
-  } catch (error) {
-    console.error('❌ Automation error:', error.message);
-    if (error.stack) {
-      console.error(error.stack);
-    }
+  // Validate target exists
+  if (!fs.existsSync(target)) {
+    console.error(`Error: Path not found: ${target}`);
+    console.error('');
+    printUsage();
     process.exit(1);
   }
-})();
-`;
-  }
 
-  // If has require but no async wrapper
-  if (!hasAsyncIIFE) {
-    return `
-(async () => {
-  try {
-    ${code}
-  } catch (error) {
-    console.error('❌ Automation error:', error.message);
-    if (error.stack) {
-      console.error(error.stack);
-    }
+  const isSpecFile =
+    fs.statSync(target).isFile() &&
+    (target.endsWith('.spec.ts') || target.endsWith('.spec.js') || target.endsWith('.test.ts') || target.endsWith('.test.js'));
+
+  const projectRoot = findProjectRoot(target);
+  if (!projectRoot) {
+    console.error(`Error: Could not find project root (no package.json found) for: ${target}`);
     process.exit(1);
   }
-})();
-`;
-  }
 
-  return code;
-}
+  console.log(`Project root: ${projectRoot}`);
 
-/**
- * Main execution
- */
-async function main() {
-  console.log('🎭 Playwright Skill - Universal Executor\n');
-
-  // Clean up old temp files from previous runs
-  cleanupOldTempFiles();
-
-  // Check Playwright installation
-  if (!checkPlaywrightInstalled()) {
-    const installed = installPlaywright();
-    if (!installed) {
-      process.exit(1);
-    }
-  }
-
-  // Get code to execute
-  const rawCode = getCodeToExecute();
-  const code = wrapCodeIfNeeded(rawCode);
-
-  // Create temporary file for execution
-  const tempFile = path.join(__dirname, `.temp-execution-${Date.now()}.js`);
-
-  try {
-    // Write code to temp file
-    fs.writeFileSync(tempFile, code, 'utf8');
-
-    // Execute the code
-    console.log('🚀 Starting automation...\n');
-    require(tempFile);
-
-    // Note: Temp file will be cleaned up on next run
-    // This allows long-running async operations to complete safely
-
-  } catch (error) {
-    console.error('❌ Execution failed:', error.message);
-    if (error.stack) {
-      console.error('\n📋 Stack trace:');
-      console.error(error.stack);
-    }
+  // Check @playwright/test is installed
+  if (!hasPlaywrightTest(projectRoot)) {
+    console.error('\n@playwright/test is not installed in this project.');
+    console.error('Run the following to set it up:\n');
+    console.error(`  cd ${projectRoot}`);
+    console.error('  npm install --save-dev @playwright/test');
+    console.error('  npx playwright install chromium\n');
     process.exit(1);
   }
+
+  const config = findPlaywrightConfig(projectRoot);
+  if (!config) {
+    console.warn('\nWarning: No playwright.config.ts found in project root.');
+    console.warn('Tests will run with default settings. Consider generating a config file.\n');
+  } else {
+    console.log(`Config: ${path.relative(projectRoot, config)}`);
+  }
+
+  // Build: npx playwright test [spec-file] [...extra-args]
+  const playwrightArgs = ['playwright', 'test'];
+
+  if (isSpecFile) {
+    // Pass path relative to project root
+    playwrightArgs.push(path.relative(projectRoot, path.resolve(target)));
+  }
+
+  playwrightArgs.push(...extraArgs);
+
+  console.log(`Running: npx ${playwrightArgs.join(' ')}`);
+  console.log(`In: ${projectRoot}\n`);
+  console.log('─'.repeat(60));
+
+  const result = spawnSync('npx', playwrightArgs, {
+    cwd: projectRoot,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      // Ensure CI env is set so playwright applies CI-appropriate settings
+      CI: process.env.CI ?? 'true',
+    },
+  });
+
+  if (result.error) {
+    console.error('\nFailed to run playwright:', result.error.message);
+    process.exit(1);
+  }
+
+  process.exit(result.status ?? 0);
 }
 
-// Run main function
-main().catch(error => {
-  console.error('❌ Fatal error:', error.message);
-  process.exit(1);
-});
+main();

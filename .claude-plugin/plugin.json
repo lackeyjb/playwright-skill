@@ -1,7 +1,7 @@
 {
   "name": "playwright-skill",
-  "version": "4.1.0",
-  "description": "Claude Code Skill for general-purpose browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp, and autonomously handles any browser automation task.",
+  "version": "5.0.0",
+  "description": "Claude Code Skill for writing CI-ready E2E test suites with @playwright/test. Explores project structure, writes persistent spec files and playwright.config.ts, and generates CI workflow configs for GitHub Actions and GitLab CI.",
   "author": {
     "name": "lackeyjb"
   },
@@ -11,11 +11,11 @@
     "claude-skill",
     "claude-code",
     "playwright",
-    "browser-automation",
-    "testing",
+    "playwright-test",
     "e2e",
-    "web-testing",
-    "automation",
+    "ci",
+    "testing",
+    "github-actions",
     "model-invoked"
   ]
 }

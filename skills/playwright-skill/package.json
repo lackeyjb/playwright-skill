@@ -1,26 +1,28 @@
 {
   "name": "playwright-skill",
-  "version": "4.1.0",
-  "description": "General-purpose browser automation with Playwright for Claude Code with auto-detection and smart test management",
+  "version": "5.0.0",
+  "description": "CI-ready E2E test suite writer for Claude Code. Explores project structure and writes persistent @playwright/test spec files and config for automated CI pipelines.",
   "author": "lackeyjb",
   "main": "run.js",
   "scripts": {
-    "setup": "npm install && npx playwright install chromium",
+    "setup": "npm install",
+    "install-browsers": "npx playwright install chromium",
     "install-all-browsers": "npx playwright install chromium firefox webkit"
   },
   "keywords": [
     "playwright",
-    "automation",
+    "e2e",
+    "testing",
+    "ci",
     "browser-testing",
-    "web-automation",
     "claude-skill",
-    "general-purpose"
+    "playwright-test"
   ],
   "dependencies": {
-    "playwright": "^1.57.0"
+    "@playwright/test": "^1.49.0"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "license": "MIT"
 }
