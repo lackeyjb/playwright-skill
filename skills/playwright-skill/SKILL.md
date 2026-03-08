@@ -346,11 +346,11 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - run: npm ci
@@ -364,14 +364,14 @@ jobs:
           CI: true
           BASE_URL: http://localhost:3000
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: test-results
@@ -384,7 +384,7 @@ jobs:
 ```yaml
 # .gitlab-ci.yml (e2e stage)
 e2e-tests:
-  image: mcr.microsoft.com/playwright:v1.49.0-jammy
+  image: mcr.microsoft.com/playwright:v1.58.2-jammy
   stage: test
   script:
     - npm ci

@@ -32,12 +32,12 @@ This document contains the comprehensive Playwright API reference and advanced p
 Before using this skill, ensure Playwright is available:
 
 ```bash
-# Check if Playwright is installed
-npm list playwright 2>/dev/null || echo "Playwright not installed"
+# Check if @playwright/test is installed in the project
+npm list @playwright/test 2>/dev/null || echo "@playwright/test not installed"
 
-# Install (if needed)
-cd ~/.claude/skills/playwright-skill
-npm run setup
+# Install (if needed) — run from the project, not the skill directory
+npm install --save-dev @playwright/test@^1.58.2
+npx playwright install chromium
 ```
 
 ### Basic Configuration
@@ -53,12 +53,13 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    headless: true,
   },
   projects: [
     {
@@ -527,7 +528,7 @@ testData.forEach(({ username, password, expected }) => {
 Install `@axe-core/playwright` (maintained by Deque, works with `@playwright/test`):
 
 ```bash
-npm install --save-dev @axe-core/playwright
+npm install --save-dev @axe-core/playwright@^4.11.1
 ```
 
 ```typescript
@@ -554,10 +555,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
@@ -565,7 +566,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run tests
         run: npx playwright test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
