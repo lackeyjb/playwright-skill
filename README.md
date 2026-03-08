@@ -1,45 +1,44 @@
 # Playwright Skill for Claude Code
 
-**General-purpose browser automation as a Claude Skill**
+**Write CI-ready E2E test suites with `@playwright/test`**
 
-A [Claude Skill](https://www.anthropic.com/blog/skills) that enables Claude to write and execute any Playwright automation on-the-fly - from simple page tests to complex multi-step flows. Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
+A [Claude Skill](https://docs.claude.com/en/docs/claude-code/skills) that enables Claude to write complete, persistent end-to-end test suites for your project — exploring the codebase first to understand the app, then generating `*.spec.ts` files, `playwright.config.ts`, and CI workflow configs ready to run in GitHub Actions or GitLab CI.
 
-Claude autonomously decides when to use this skill based on your browser automation needs, loading only the minimal information required for your specific task.
-
-Made using Claude Code.
+Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) for easy installation and distribution.
 
 ## Features
 
-- **Any Automation Task** - Claude writes custom code for your specific request, not limited to pre-built scripts
-- **Visible Browser by Default** - See automation in real-time with `headless: false`
-- **Zero Module Resolution Errors** - Universal executor ensures proper module access
-- **Progressive Disclosure** - Concise SKILL.md with full API reference loaded only when needed
-- **Safe Cleanup** - Smart temp file management without race conditions
-- **Comprehensive Helpers** - Optional utility functions for common tasks
+- **Project-aware** — Claude reads your `package.json`, existing test structure, and framework before writing a single line
+- **Persistent test files** — Writes to your project's `e2e/` directory, not a temp folder, so tests are committed to source control
+- **CI-first defaults** — Headless, no `slowMo`, proper `playwright.config.ts` with `forbidOnly`, retries, and artifact capture
+- **`@playwright/test` patterns** — Proper `test()` / `expect()` / `describe()` blocks, role-based selectors, fixtures, Page Object Model
+- **CI config generation** — GitHub Actions and GitLab CI templates with artifact upload on failure
+- **Test runner included** — `run.js` wraps `npx playwright test` for running tests from within the skill
+
+## How It Works
+
+1. Ask Claude to write E2E tests for your project
+2. Claude explores your project: reads `package.json`, finds the dev server command and port, checks for existing Playwright config and test files
+3. Claude installs `@playwright/test` if missing, generates `playwright.config.ts` if absent
+4. Claude writes `*.spec.ts` files to your project's `e2e/` directory covering key user flows
+5. Optionally generates a GitHub Actions / GitLab CI workflow
+6. Tests run via `npx playwright test` — in CI or locally
 
 ## Installation
 
-This repository is structured as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) containing a skill. You can install it as either a **plugin** (recommended) or extract it as a **standalone skill**.
-
-### Understanding the Structure
-
-This repository uses the plugin format with a nested structure:
+This repository is structured as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) with a nested skill directory.
 
 ```
 playwright-skill/              # Plugin root
 ├── .claude-plugin/           # Plugin metadata
 └── skills/
-    └── playwright-skill/     # The actual skill
+    └── playwright-skill/     # The actual skill Claude discovers
         └── SKILL.md
 ```
-
-Claude Code expects skills to be directly in folders under `.claude/skills/`, so manual installation requires extracting the nested skill folder.
 
 ---
 
 ### Option 1: Plugin Installation (Recommended)
-
-Install via Claude Code's plugin system for automatic updates and team distribution:
 
 ```bash
 # Add this repository as a marketplace
@@ -48,194 +47,187 @@ Install via Claude Code's plugin system for automatic updates and team distribut
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
 
-# Navigate to the skill directory and run setup
+# Set up the skill
 cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
 npm run setup
 ```
 
-Verify installation by running `/help` to confirm the skill is available.
-
 ---
 
-### Option 2: Standalone Skill Installation
-
-To install as a standalone skill (without the plugin system), extract only the skill folder:
-
-**Global Installation (Available Everywhere):**
+### Option 2: Standalone Global Installation
 
 ```bash
-# Clone to a temporary location
 git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
 
-# Copy only the skill folder to your global skills directory
 mkdir -p ~/.claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
 
-# Navigate to the skill and run setup
 cd ~/.claude/skills/playwright-skill
 npm run setup
 
-# Clean up temporary files
 rm -rf /tmp/playwright-skill-temp
 ```
-
-**Project-Specific Installation:**
-
-```bash
-# Clone to a temporary location
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
-
-# Copy only the skill folder to your project
-mkdir -p .claude/skills
-cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
-
-# Navigate to the skill and run setup
-cd .claude/skills/playwright-skill
-npm run setup
-
-# Clean up temporary files
-rm -rf /tmp/playwright-skill-temp
-```
-
-**Why this structure?** The plugin format requires the `skills/` directory for organizing multiple skills within a plugin. When installing as a standalone skill, you only need the inner `skills/playwright-skill/` folder contents.
 
 ---
 
-### Option 3: Download Release
+### Option 3: Project-Specific Installation
 
-1. Download and extract the latest release from [GitHub Releases](https://github.com/lackeyjb/playwright-skill/releases)
-2. Copy only the `skills/playwright-skill/` folder to:
-   - Global: `~/.claude/skills/playwright-skill`
-   - Project: `/path/to/your/project/.claude/skills/playwright-skill`
-3. Navigate to the skill directory and run setup:
-   ```bash
-   cd ~/.claude/skills/playwright-skill  # or your project path
-   npm run setup
-   ```
+```bash
+git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+
+mkdir -p .claude/skills
+cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
+
+cd .claude/skills/playwright-skill
+npm run setup
+
+rm -rf /tmp/playwright-skill-temp
+```
+
+`npm run setup` installs `@playwright/test` and the Chromium browser for the skill runner. The skill also installs `@playwright/test` into your **project** when writing tests.
 
 ---
 
 ### Verify Installation
 
-Run `/help` to confirm the skill is loaded, then ask Claude to perform a simple browser task like "Test if google.com loads".
+Run `/help` in Claude Code to confirm the skill is loaded. You should see `playwright-skill` listed.
 
 ## Quick Start
 
-After installation, simply ask Claude to test or automate any browser task. Claude will write custom Playwright code, execute it, and return results with screenshots and console output.
+After installation, ask Claude to write tests for your project:
+
+```
+"Write E2E tests for this app"
+"Add Playwright tests for the login and signup flows"
+"Write a CI-ready E2E test suite covering the main user journeys"
+"Generate a playwright.config.ts and tests for the checkout flow"
+```
+
+Claude will explore your project, write the test files, and tell you how to run them.
 
 ## Usage Examples
 
-### Test Any Page
+### Write a Full Test Suite
 
 ```
-"Test the homepage"
-"Check if the contact form works"
-"Verify the signup flow"
+"Write E2E tests covering: homepage loads, user can log in, user can create a post"
 ```
 
-### Visual Testing
+Claude will:
+- Read your `package.json` to find the framework and dev server command
+- Check for existing `playwright.config.ts` and `e2e/` directory
+- Generate `playwright.config.ts` with CI-appropriate settings
+- Write `e2e/homepage.spec.ts`, `e2e/auth.spec.ts`, `e2e/posts.spec.ts`
+
+### Add CI Workflow
 
 ```
-"Take screenshots of the dashboard in mobile and desktop"
-"Test responsive design across different viewports"
+"Also generate a GitHub Actions workflow for these tests"
 ```
 
-### Interaction Testing
+Claude writes `.github/workflows/e2e.yml` with browser install, test execution, and artifact upload on failure.
+
+### Test Specific Flows
 
 ```
-"Fill out the registration form and submit it"
-"Click through the main navigation"
-"Test the search functionality"
+"Write tests for the checkout flow — add to cart, enter payment, confirm order"
+"Add E2E tests for the settings page and form validation"
+"Write tests for the admin dashboard"
 ```
 
-### Validation
+### Validate Claude's Tests
 
+After Claude writes the tests, run them to confirm they pass:
+
+```bash
+# Run all tests
+cd .claude/skills/playwright-skill && node run.js /path/to/your/project
+
+# Run a specific spec file
+node run.js /path/to/your/project/e2e/auth.spec.ts
+
+# Run headed for local debugging
+node run.js /path/to/your/project --headed
 ```
-"Check for broken links"
-"Verify all images load"
-"Test form validation"
+
+Or run directly from your project once `@playwright/test` is installed:
+
+```bash
+cd your-project
+npx playwright test
 ```
-
-## How It Works
-
-1. Describe what you want to test or automate
-2. Claude writes custom Playwright code for the task
-3. The universal executor (run.js) runs it with proper module resolution
-4. Browser opens (visible by default) and automation executes
-5. Results are displayed with console output and screenshots
-
-## Configuration
-
-Default settings:
-
-- **Headless:** `false` (browser visible unless explicitly requested otherwise)
-- **Slow Motion:** `100ms` for visibility
-- **Timeout:** `30s`
-- **Screenshots:** Saved to `/tmp/`
 
 ## Project Structure
 
 ```
 playwright-skill/
 ├── .claude-plugin/
-│   ├── plugin.json          # Plugin metadata for distribution
+│   ├── plugin.json          # Plugin metadata
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
-│   └── playwright-skill/    # The actual skill (Claude discovers this)
-│       ├── SKILL.md         # What Claude reads
-│       ├── run.js           # Universal executor (proper module resolution)
-│       ├── package.json     # Dependencies & setup scripts
+│   └── playwright-skill/
+│       ├── SKILL.md         # Skill instructions Claude reads
+│       ├── API_REFERENCE.md # Full @playwright/test API reference
+│       ├── run.js           # Test runner (wraps npx playwright test)
+│       ├── package.json     # Skill dependencies
 │       └── lib/
 │           └── helpers.js   # Optional utility functions
-│       └── API_REFERENCE.md # Full Playwright API reference
-├── README.md                # This file - user documentation
-├── CONTRIBUTING.md          # Contribution guidelines
-└── LICENSE                  # MIT License
+├── README.md
+├── CONTRIBUTING.md
+└── LICENSE
 ```
 
-## Advanced Usage
+## What Gets Written to Your Project
 
-Claude will automatically load `API_REFERENCE.md` when needed for comprehensive documentation on selectors, network interception, authentication, visual regression testing, mobile emulation, performance testing, and debugging.
+When Claude uses this skill, it writes to your project (not the skill directory):
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `playwright.config.ts` | project root | CI-ready config with `forbidOnly`, retries, artifact capture |
+| `e2e/*.spec.ts` | project `e2e/` dir | Test spec files using `@playwright/test` |
+| `.github/workflows/e2e.yml` | project | GitHub Actions CI workflow (optional) |
+| `.gitignore` entries | project | Excludes `test-results/`, `playwright-report/` |
+
+Tests are committed to your project's source control and run via `npx playwright test`.
 
 ## Dependencies
 
-- Node.js
-- Playwright (installed via `npm run setup`)
+- Node.js ≥ 18
+- `@playwright/test` ^1.58.2 (installed in both the skill and your project)
 - Chromium (installed via `npm run setup`)
 
 ## Troubleshooting
 
-**Playwright not installed?**
-Navigate to the skill directory and run `npm run setup`.
+**`@playwright/test` not found in my project?**
+Ask Claude to install it: *"Install @playwright/test in this project"*, or run:
+```bash
+npm install --save-dev @playwright/test && npx playwright install chromium
+```
 
-**Module not found errors?**
-Ensure automation runs via `run.js`, which handles module resolution.
+**Tests failing due to wrong base URL?**
+Set `BASE_URL` when running: `BASE_URL=http://localhost:4000 npx playwright test`
+Or update `playwright.config.ts` to match your dev server port.
 
-**Browser doesn't open?**
-Verify `headless: false` is set. The skill defaults to visible browser unless headless mode is requested.
+**Tests pass locally but fail in CI?**
+Check that your CI workflow starts the app before running tests. The `webServer` config in `playwright.config.ts` handles this automatically if configured correctly.
 
 **Install all browsers?**
-Run `npm run install-all-browsers` from the skill directory.
-
-## What is a Skill?
-
-[Agent Skills](https://agentskills.io) are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently. When you ask Claude to test a webpage or automate browser interactions, Claude discovers this skill, loads the necessary instructions, executes custom Playwright code, and returns results with screenshots and console output.
-
-This Playwright skill implements the [open Agent Skills specification](https://agentskills.io), making it compatible across agent platforms.
-
-## Contributing
-
-Contributions are welcome. Fork the repository, create a feature branch, make your changes, and submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+```bash
+cd .claude/skills/playwright-skill  # or your install path
+npm run install-all-browsers
+```
 
 ## Learn More
 
-- [Agent Skills Specification](https://agentskills.io) - Open specification for agent skills
 - [Claude Code Skills Documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
-- [Plugin Marketplaces](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
-- [API_REFERENCE.md](skills/playwright-skill/API_REFERENCE.md) - Full Playwright documentation
-- [GitHub Issues](https://github.com/lackeyjb/playwright-skill/issues)
+- [Playwright Documentation](https://playwright.dev/docs/intro)
+- [API_REFERENCE.md](skills/playwright-skill/API_REFERENCE.md) — Full `@playwright/test` API reference
+
+## Contributing
+
+Contributions are welcome. Fork the repository, create a feature branch, and submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.
