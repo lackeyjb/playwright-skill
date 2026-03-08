@@ -68,8 +68,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run start',
-    url: 'http://localhost:3000',
+    // In CI: serve the production build (build is a separate CI step before `npx playwright test`)
+    // Locally: use dev server for fast iteration
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
+    url: process.env.BASE_URL || 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
   },
 });
@@ -555,8 +557,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
@@ -564,9 +566,15 @@ jobs:
         run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+      - name: Build app
+        run: npm run build
       - name: Run tests
         run: npx playwright test
-      - uses: actions/upload-artifact@v7
+        env:
+          CI: true
+          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report

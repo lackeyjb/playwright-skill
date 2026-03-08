@@ -26,15 +26,19 @@ Tests are only production-ready if they match the actual app. Generic templates 
 ### Package & Config
 
 ```
-Read: <project-root>/package.json         — framework, dev command, port, dependencies
-Glob: <project-root>/playwright.config.*  — existing Playwright setup
-Glob: <project-root>/.env*               — environment variables, port overrides
+Read: <project-root>/package.json          — framework, dev/build/start scripts, port, deps
+Glob: <project-root>/playwright.config.*   — existing Playwright setup
+Read: <project-root>/.env.example          — what env vars the app requires (or .env.local.example)
+Read: <project-root>/.env                  — actual values if present (never commit secrets)
 ```
 
 Extract:
 - **Framework**: Next.js, Vite, CRA, Express, Remix, etc.
-- **Dev server command**: the exact script name (`dev`, `start`, `serve`)
-- **Port**: from scripts, `.env`, or framework defaults (Next=3000, Vite=5173, CRA=3000)
+- **Dev server command**: exact script name (`dev`, `start`, `serve`)
+- **Build command**: exact script name (`build`) — needed for CI
+- **Production serve command**: `start`, `preview`, etc. — what runs after `build` in CI
+- **Port**: from scripts, `.env`, or framework defaults (Next.js=3000, Vite=5173, CRA=3000)
+- **Required env vars**: everything in `.env.example` — the CI workflow must supply all of them
 - **`@playwright/test` in devDependencies**: skip install if already present
 
 ### Routes & Pages
@@ -147,7 +151,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',   // <-- use the actual dev script from package.json
+    // In CI: use the production server (app must already be built — see CI workflow)
+    // Locally: use the dev server for fast iteration
+    // Adjust command for your framework:
+    //   Next.js:  CI ? 'npm run start' : 'npm run dev'
+    //   Vite:     CI ? 'npm run preview' : 'npm run dev'
+    //   CRA:      CI ? 'serve -s build' : 'npm run start'
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
@@ -163,6 +173,7 @@ export default defineConfig({
 - `headless: true`: No display required in CI
 - `screenshot/video/trace`: Artifacts on failure for debugging
 - `BASE_URL` constant: port defined once — both `use.baseURL` and `webServer.url` reference it
+- `webServer.command`: serves the **production build** in CI (see CI workflow for build step)
 
 ## Step 5: Write Test Spec Files
 
@@ -477,32 +488,60 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
       - run: npm ci
 
+      # Cache Playwright browsers — avoids re-downloading ~200MB on every run
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      # Build the app BEFORE running tests.
+      # Tests run against the production build, not the dev server.
+      # A build failure here is clear and fast-fails with a useful error.
+      # Adjust this command for your framework:
+      #   Next.js:  npm run build
+      #   Vite:     npm run build  (then `npm run preview` serves it)
+      #   CRA:      npm run build  (then `serve -s build` serves it)
+      - name: Build app
+        run: npm run build
+        env:
+          # Pass any env vars the BUILD needs (API URLs, feature flags, etc.)
+          # These come from repository secrets — Settings > Secrets and variables > Actions
+          # NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
       - name: Run E2E tests
         run: npx playwright test
         env:
           CI: true
-          BASE_URL: http://localhost:3000
+          # Auth credentials for test user — must be set as repository secrets
+          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          # Add any env vars the SERVER needs to start and run correctly:
+          # DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          # JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-results
@@ -515,14 +554,18 @@ jobs:
 ```yaml
 # .gitlab-ci.yml (e2e stage)
 e2e-tests:
+  # Pin to the same Playwright version as in package.json
   image: mcr.microsoft.com/playwright:v1.58.2-jammy
   stage: test
   script:
     - npm ci
+    - npm run build        # build first — tests run against production build
     - npx playwright test
   variables:
     CI: "true"
-    BASE_URL: "http://localhost:3000"
+    TEST_EMAIL: $TEST_EMAIL       # set in GitLab CI/CD variables
+    TEST_PASSWORD: $TEST_PASSWORD
+    # DATABASE_URL: $DATABASE_URL
   artifacts:
     when: on_failure
     paths:
@@ -530,6 +573,30 @@ e2e-tests:
       - test-results/
     expire_in: 7 days
 ```
+
+### CI Environment Variables
+
+E2E tests in CI need more than `CI=true`. Read `.env.example` in Step 1 to identify everything required, then ensure all of it is available in CI.
+
+**Always needed:**
+| Variable | Source | Notes |
+|---|---|---|
+| `TEST_EMAIL` | CI secret | Login credentials for test user |
+| `TEST_PASSWORD` | CI secret | Login credentials for test user |
+
+**Usually needed (check `.env.example`):**
+| Variable | Source | Notes |
+|---|---|---|
+| `DATABASE_URL` | CI secret | If the app connects to a real DB in tests |
+| `NEXTAUTH_SECRET` / `JWT_SECRET` | CI secret | Session signing key — app won't start without it |
+| `NEXT_PUBLIC_API_URL` | CI var or secret | If the frontend calls an external API |
+| App-specific secrets | CI secret | Anything else in `.env.example` |
+
+**Never hardcode secrets in the workflow file.** Set them in:
+- GitHub Actions: Settings → Secrets and variables → Actions → New repository secret
+- GitLab: Settings → CI/CD → Variables
+
+**Telling the user what secrets to add:** After reading `.env.example`, tell the user exactly which variables they need to add as secrets before the CI workflow will work. Don't assume they already know.
 
 ---
 
@@ -596,12 +663,14 @@ In GitHub Actions, add this before the browser install step:
 
 ## Tips
 
-- **Always explore first** - read `package.json` and existing test structure before writing anything
+- **Always explore first** - read `package.json`, route files, auth components, and `.env.example` before writing anything
+- **Build before testing in CI** - `npm run build` as a separate CI step before `npx playwright test`; `webServer.command` in CI should serve the built app (`npm run start`, `npm run preview`), not the dev server
 - **Use `baseURL`** - write `page.goto('/')` not `page.goto('http://localhost:3000/')` so tests work in any environment
-- **Prefer role selectors** - `getByRole`, `getByLabel`, `getByTestId` over CSS selectors
+- **Prefer role selectors** - `getByRole`, `getByLabel`, `getByTestId` over CSS selectors; read the actual component to find real labels, not guesses
 - **`forbidOnly`** - catches accidental `.only` in CI before it skips the entire suite
 - **Test isolation** - each test should be independent; use `beforeEach` for shared setup, not shared state
+- **`storageState` for auth** - use `globalSetup` + `storageState` to log in once and reuse the session; per-test login loops multiply CI time
 - **Artifact patterns** - always configure `screenshot: 'only-on-failure'` and upload `playwright-report/` in CI
 - **`webServer` config** - use `reuseExistingServer: !process.env.CI` so CI always starts fresh but local dev reuses running servers
-- **Environment variables** - use `process.env.BASE_URL`, `process.env.TEST_EMAIL`, etc. for CI flexibility
+- **Environment variables** - read `.env.example` and tell the user which variables must be set as CI secrets
 - **No hardcoded waits** - never use `page.waitForTimeout()`; use `waitForURL`, `waitForSelector`, `expect().toBeVisible()`
