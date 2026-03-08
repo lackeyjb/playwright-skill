@@ -182,11 +182,12 @@ test.describe('Authentication', () => {
 
 ```typescript
 // e2e/fixtures.ts
-import { test as base } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
-export const test = base.extend({
-  // Reuse auth state across tests in the same worker
-  page: async ({ page }, use) => {
+// Use a distinct fixture name — never shadow the built-in `page` fixture.
+// This lets the same spec file mix authenticated and unauthenticated tests.
+export const test = base.extend<{ authenticatedPage: typeof base['_fixtures']['page'] }>({
+  authenticatedPage: async ({ page }, use) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(process.env.TEST_EMAIL || 'test@example.com');
     await page.getByLabel('Password').fill(process.env.TEST_PASSWORD || 'password');
@@ -196,13 +197,13 @@ export const test = base.extend({
   },
 });
 
-// e2e/dashboard.spec.ts
-import { test } from './fixtures';
-import { expect } from '@playwright/test';
+export { expect };
 
-test('dashboard shows user data', async ({ page }) => {
-  // Already logged in via fixture
-  await expect(page.getByTestId('welcome-message')).toBeVisible();
+// e2e/dashboard.spec.ts
+import { test, expect } from './fixtures';
+
+test('dashboard shows user data', async ({ authenticatedPage }) => {
+  await expect(authenticatedPage.getByTestId('welcome-message')).toBeVisible();
 });
 ```
 
@@ -217,6 +218,7 @@ test('product list renders from API', async ({ page }) => {
   await page.route('**/api/products', async route => {
     await route.fulfill({
       status: 200,
+      contentType: 'application/json',
       body: JSON.stringify([
         { id: 1, name: 'Widget A', price: 9.99 },
         { id: 2, name: 'Widget B', price: 19.99 },

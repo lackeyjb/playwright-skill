@@ -136,11 +136,7 @@ function main() {
   const result = spawnSync('npx', playwrightArgs, {
     cwd: projectRoot,
     stdio: 'inherit',
-    env: {
-      ...process.env,
-      // Ensure CI env is set so playwright applies CI-appropriate settings
-      CI: process.env.CI ?? 'true',
-    },
+    env: process.env,
   });
 
   if (result.error) {
@@ -148,7 +144,8 @@ function main() {
     process.exit(1);
   }
 
-  process.exit(result.status ?? 0);
+  // result.status is null when process was killed by a signal — treat as failure
+  process.exit(result.status ?? 1);
 }
 
 main();

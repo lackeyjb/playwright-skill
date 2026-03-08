@@ -5,7 +5,7 @@
   "author": "lackeyjb",
   "main": "run.js",
   "scripts": {
-    "setup": "npm install",
+    "setup": "npm install && npx playwright install chromium",
     "install-browsers": "npx playwright install chromium",
     "install-all-browsers": "npx playwright install chromium firefox webkit"
   },
@@ -22,7 +22,7 @@
     "@playwright/test": "^1.49.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "license": "MIT"
 }

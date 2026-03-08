@@ -5,15 +5,15 @@
     "email": "github@lackeyjb"
   },
   "metadata": {
-    "description": "Playwright browser automation skill for Claude Code",
-    "version": "1.0.0"
+    "description": "CI-ready E2E test suite writer using @playwright/test for Claude Code",
+    "version": "5.0.0"
   },
   "plugins": [
     {
       "name": "playwright-skill",
       "source": "./",
-      "description": "Claude Code Skill for general-purpose browser automation with Playwright. Claude autonomously writes and executes custom automation for testing pages, validating UX, and any browser task.",
-      "version": "4.1.0",
+      "description": "Claude Code Skill for writing CI-ready E2E test suites with @playwright/test. Explores project structure, writes persistent spec files and playwright.config.ts, and generates CI workflow configs for GitHub Actions and GitLab CI.",
+      "version": "5.0.0",
       "author": {
         "name": "lackeyjb"
       },
@@ -24,15 +24,15 @@
         "claude-skill",
         "claude-code",
         "playwright",
-        "browser-automation",
-        "testing",
+        "playwright-test",
         "e2e",
-        "web-testing",
-        "automation",
+        "ci",
+        "testing",
+        "github-actions",
         "model-invoked"
       ],
       "category": "testing",
-      "tags": ["browser", "automation", "playwright", "testing", "e2e"]
+      "tags": ["playwright", "e2e", "ci", "testing", "github-actions"]
     }
   ]
 }

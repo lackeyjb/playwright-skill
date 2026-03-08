@@ -1,7 +1,14 @@
 // playwright-helpers.js
-// Reusable utility functions for Playwright automation
+// Optional utility functions for use in @playwright/test custom fixtures and helpers.
+//
+// USAGE: These helpers are NOT auto-injected. Import explicitly in your test files:
+//   const { extractTexts, retryWithBackoff } = require('../../.claude/skills/playwright-skill/lib/helpers');
+//
+// Note: Browser/context/page management (launchBrowser, createContext, createPage) is
+// handled by the @playwright/test runner via fixtures. Use those helpers only if you
+// need a browser instance outside of a test fixture (e.g., global setup scripts).
 
-const { chromium, firefox, webkit } = require('playwright');
+const { chromium, firefox, webkit } = require('@playwright/test');
 
 /**
  * Parse extra HTTP headers from environment variables.
@@ -369,59 +376,6 @@ async function createContext(browser, options = {}) {
   return await browser.newContext({ ...defaultOptions, ...options });
 }
 
-/**
- * Detect running dev servers on common ports
- * @param {Array<number>} customPorts - Additional ports to check
- * @returns {Promise<Array>} Array of detected server URLs
- */
-async function detectDevServers(customPorts = []) {
-  const http = require('http');
-
-  // Common dev server ports
-  const commonPorts = [3000, 3001, 3002, 5173, 8080, 8000, 4200, 5000, 9000, 1234];
-  const allPorts = [...new Set([...commonPorts, ...customPorts])];
-
-  const detectedServers = [];
-
-  console.log('🔍 Checking for running dev servers...');
-
-  for (const port of allPorts) {
-    try {
-      await new Promise((resolve, reject) => {
-        const req = http.request({
-          hostname: 'localhost',
-          port: port,
-          path: '/',
-          method: 'HEAD',
-          timeout: 500
-        }, (res) => {
-          if (res.statusCode < 500) {
-            detectedServers.push(`http://localhost:${port}`);
-            console.log(`  ✅ Found server on port ${port}`);
-          }
-          resolve();
-        });
-
-        req.on('error', () => resolve());
-        req.on('timeout', () => {
-          req.destroy();
-          resolve();
-        });
-
-        req.end();
-      });
-    } catch (e) {
-      // Port not available, continue
-    }
-  }
-
-  if (detectedServers.length === 0) {
-    console.log('  ❌ No dev servers detected');
-  }
-
-  return detectedServers;
-}
-
 module.exports = {
   launchBrowser,
   createPage,
@@ -436,6 +390,5 @@ module.exports = {
   handleCookieBanner,
   retryWithBackoff,
   createContext,
-  detectDevServers,
   getExtraHeadersFromEnv
 };

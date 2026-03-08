@@ -76,57 +76,40 @@ export default defineConfig({
 
 ## Core Patterns
 
-### Basic Browser Automation
-
-```javascript
-const { chromium } = require('playwright');
-
-(async () => {
-  // Launch browser
-  const browser = await chromium.launch({
-    headless: false,  // Set to true for headless mode
-    slowMo: 50       // Slow down operations by 50ms
-  });
-
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 720 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  });
-
-  const page = await context.newPage();
-
-  // Navigate
-  await page.goto('https://example.com', {
-    waitUntil: 'networkidle'  // Wait for network to be idle
-  });
-
-  // Your automation here
-
-  await browser.close();
-})();
-```
-
-### Test Structure
+### Basic Test Structure
 
 ```typescript
 import { test, expect } from '@playwright/test';
 
 test.describe('Feature Name', () => {
   test.beforeEach(async ({ page }) => {
+    // page, context, and browser are provided by the test runner —
+    // always headless in CI, configured via playwright.config.ts
     await page.goto('/');
   });
 
-  test('should do something', async ({ page }) => {
-    // Arrange
-    const button = page.locator('button[data-testid="submit"]');
-
-    // Act
-    await button.click();
-
-    // Assert
-    await expect(page).toHaveURL('/success');
-    await expect(page.locator('.message')).toHaveText('Success!');
+  test('should load successfully', async ({ page }) => {
+    await expect(page).toHaveTitle(/My App/);
   });
+});
+```
+
+### Arrange / Act / Assert
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('should submit form and redirect', async ({ page }) => {
+  // Arrange
+  await page.goto('/contact');
+
+  // Act
+  await page.getByLabel('Name').fill('Jane Doe');
+  await page.getByRole('button', { name: /submit/i }).click();
+
+  // Assert
+  await expect(page).toHaveURL('/success');
+  await expect(page.getByRole('heading')).toHaveText('Thank you!');
 });
 ```
 
@@ -408,28 +391,24 @@ await page.route('**/api/**', route => {
 await page.route('**/*.{png,jpg,jpeg,gif}', route => route.abort());
 ```
 
-### Custom Headers via Environment Variables
+### Custom Headers
 
-The skill supports automatic header injection via environment variables:
+Use `extraHTTPHeaders` in `playwright.config.ts` or per-test via `page.setExtraHTTPHeaders`:
 
-```bash
-# Single header (simple)
-PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill
+```typescript
+// playwright.config.ts — apply to all requests globally
+use: {
+  extraHTTPHeaders: {
+    'X-Automated-By': 'playwright',
+  },
+},
 
-# Multiple headers (JSON)
-PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Request-ID":"123"}'
+// Or per-test
+test('with custom header', async ({ page }) => {
+  await page.setExtraHTTPHeaders({ 'X-Request-ID': 'test-123' });
+  await page.goto('/');
+});
 ```
-
-These headers are automatically applied to all requests when using:
-- `helpers.createContext(browser)` - headers merged automatically
-- `getContextOptionsWithHeaders(options)` - utility injected by run.js wrapper
-
-**Precedence (highest to lowest):**
-1. Headers passed directly in `options.extraHTTPHeaders`
-2. Environment variable headers
-3. Playwright defaults
-
-**Use case:** Identify automated traffic so your backend can return LLM-optimized responses (e.g., plain text errors instead of styled HTML).
 
 ## Visual Testing
 
@@ -504,16 +483,22 @@ console.log(`Page loaded in ${loadTime}ms`);
 
 ## Parallel Execution
 
-```javascript
-// Run tests in parallel
-test.describe.parallel('Parallel suite', () => {
-  test('test 1', async ({ page }) => {
-    // Runs in parallel with test 2
-  });
+Enable parallelism in `playwright.config.ts` — `test.describe.parallel` was removed in v1.32:
 
-  test('test 2', async ({ page }) => {
-    // Runs in parallel with test 1
-  });
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  fullyParallel: true,   // All tests run in parallel across workers
+  workers: process.env.CI ? 1 : undefined,  // Limit workers in CI
+});
+```
+
+To run a specific describe block serially within a parallel suite:
+
+```typescript
+test.describe.serial('Sequential setup flow', () => {
+  test('step 1 - create account', async ({ page }) => { /* ... */ });
+  test('step 2 - verify email', async ({ page }) => { /* ... */ });
 });
 ```
 
@@ -539,13 +524,20 @@ testData.forEach(({ username, password, expected }) => {
 
 ## Accessibility Testing
 
-```javascript
-import { injectAxe, checkA11y } from 'axe-playwright';
+Install `@axe-core/playwright` (maintained by Deque, works with `@playwright/test`):
 
-test('accessibility check', async ({ page }) => {
+```bash
+npm install --save-dev @axe-core/playwright
+```
+
+```typescript
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test('homepage has no accessibility violations', async ({ page }) => {
   await page.goto('/');
-  await injectAxe(page);
-  await checkA11y(page);
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
 });
 ```
 
@@ -562,14 +554,23 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
       - name: Run tests
         run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 ```
 
 ## Best Practices
@@ -613,8 +614,14 @@ await frame.locator('button').click();
 
 ```javascript
 async function scrollToBottom(page) {
+  const previousHeight = await page.evaluate(() => document.body.scrollHeight);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(500);
+  // Wait for content to load — never use waitForTimeout
+  await page.waitForFunction(
+    prev => document.body.scrollHeight > prev,
+    previousHeight,
+    { timeout: 5000 }
+  ).catch(() => { /* already at bottom */ });
 }
 ```
 
