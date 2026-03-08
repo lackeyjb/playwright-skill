@@ -42,7 +42,7 @@ playwright-skill/              # Plugin root
 
 ```bash
 # Add this repository as a marketplace
-/plugin marketplace add lackeyjb/playwright-skill
+/plugin marketplace add zizzfizzix/playwright-skill
 
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
@@ -57,7 +57,7 @@ npm run setup
 ### Option 2: Standalone Global Installation
 
 ```bash
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/playwright-skill-temp
 
 mkdir -p ~/.claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
@@ -73,7 +73,7 @@ rm -rf /tmp/playwright-skill-temp
 ### Option 3: Project-Specific Installation
 
 ```bash
-git clone https://github.com/lackeyjb/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/playwright-skill-temp
 
 mkdir -p .claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
