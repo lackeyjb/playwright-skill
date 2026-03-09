@@ -40,8 +40,9 @@ Enhancement suggestions are welcome! Please:
 
 4. **Test your changes**
    ```bash
-   npm run setup
-   # Test your changes with Claude Code
+   # Load the skill locally and test in Claude Code
+   claude --plugin-dir ./
+   # Then: "Write E2E tests for <some project>"
    ```
 
 5. **Commit your changes**
@@ -104,9 +105,7 @@ playwright-skill/
 │   └── marketplace.json     # Marketplace distribution config
 ├── skills/playwright-skill/
 │   ├── SKILL.md             # Skill instructions — keep under 500 lines
-│   ├── API_REFERENCE.md     # Full @playwright/test API reference
-│   ├── run.js               # Test runner (wraps npx playwright test)
-│   └── package.json         # devDependencies: @playwright/test
+│   └── API_REFERENCE.md     # Full @playwright/test API reference
 ├── README.md
 ├── CONTRIBUTING.md
 └── LICENSE
@@ -115,10 +114,9 @@ playwright-skill/
 ### Testing
 
 Before submitting:
-1. Test with a fresh installation (`npm run setup`)
-2. Verify examples in SKILL.md work against a real project
-3. Check that `run.js` handles edge cases
-4. Verify the skill triggers correctly in Claude Code with `/playwright-skill`
+1. Load locally with `claude --plugin-dir ./` and test against a real project
+2. Verify SKILL.md examples produce working tests
+3. Check the skill triggers correctly in Claude Code — auto via description, and manually via `/playwright-skill`
 
 ## Questions?
 

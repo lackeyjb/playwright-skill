@@ -2,7 +2,7 @@
 name: playwright-skill
 description: Write CI-ready E2E test suites with Playwright Test. Explores the project to understand the app's structure and framework, then writes persistent *.spec.ts test files to the project's test directory and generates playwright.config.ts. Use when you need to write browser-based end-to-end tests that run in automated CI pipelines (GitHub Actions, GitLab CI, etc.).
 argument-hint: [project-path or spec-file] [--headed] [--grep <pattern>]
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm install*), Bash(npx playwright*), Bash(node ${CLAUDE_SKILL_DIR}/run.js*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm install*), Bash(npx playwright*)
 ---
 
 # Playwright E2E Test Suite Writer
@@ -200,13 +200,13 @@ test.describe('Homepage', () => {
 
 ```bash
 # Run all tests
-cd ${CLAUDE_SKILL_DIR} && node run.js <project-root>
+cd <project-root> && npx playwright test
 
 # Run a specific spec file
-cd ${CLAUDE_SKILL_DIR} && node run.js <project-root>/e2e/homepage.spec.ts
+cd <project-root> && npx playwright test e2e/homepage.spec.ts
 
 # Run with headed browser for local debugging
-cd ${CLAUDE_SKILL_DIR} && node run.js <project-root> --headed
+cd <project-root> && npx playwright test --headed
 ```
 
 **If tests fail:**

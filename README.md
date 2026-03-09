@@ -13,7 +13,7 @@ Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/p
 - **CI-first defaults** — Headless, no `slowMo`, proper `playwright.config.ts` with `forbidOnly`, retries, and artifact capture
 - **`@playwright/test` patterns** — Proper `test()` / `expect()` / `describe()` blocks, role-based selectors, fixtures, Page Object Model
 - **CI config generation** — GitHub Actions and GitLab CI templates with artifact upload on failure
-- **Test runner included** — `run.js` wraps `npx playwright test` for running tests from within the skill
+
 
 ## How It Works
 
@@ -46,11 +46,9 @@ playwright-skill/              # Plugin root
 
 # Install the plugin
 /plugin install playwright-skill@playwright-skill
-
-# Set up the skill
-cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
-npm run setup
 ```
+
+No further setup needed — the skill has no dependencies of its own.
 
 ---
 
@@ -61,9 +59,6 @@ git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/playwright-ski
 
 mkdir -p ~/.claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
-
-cd ~/.claude/skills/playwright-skill
-npm run setup
 
 rm -rf /tmp/playwright-skill-temp
 ```
@@ -78,13 +73,10 @@ git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/playwright-ski
 mkdir -p .claude/skills
 cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
 
-cd .claude/skills/playwright-skill
-npm run setup
-
 rm -rf /tmp/playwright-skill-temp
 ```
 
-`npm run setup` installs `@playwright/test` and the Chromium browser for the skill runner. The skill also installs `@playwright/test` into your **project** when writing tests.
+The skill has no dependencies of its own. `@playwright/test` is installed into your **project** by Claude when writing tests.
 
 ---
 
@@ -137,24 +129,14 @@ Claude writes `.github/workflows/e2e.yml` with browser install, test execution, 
 
 ### Validate Claude's Tests
 
-After Claude writes the tests, run them to confirm they pass:
-
-```bash
-# Run all tests
-cd .claude/skills/playwright-skill && node run.js /path/to/your/project
-
-# Run a specific spec file
-node run.js /path/to/your/project/e2e/auth.spec.ts
-
-# Run headed for local debugging
-node run.js /path/to/your/project --headed
-```
-
-Or run directly from your project once `@playwright/test` is installed:
+After Claude writes the tests, run them from your project:
 
 ```bash
 cd your-project
-npx playwright test
+npx playwright test                          # run all tests
+npx playwright test e2e/auth.spec.ts         # run a specific file
+npx playwright test --headed                 # watch the browser
+npx playwright test --grep "login"           # filter by name
 ```
 
 ## Project Structure
@@ -167,9 +149,7 @@ playwright-skill/
 ├── skills/
 │   └── playwright-skill/
 │       ├── SKILL.md         # Skill instructions Claude reads
-│       ├── API_REFERENCE.md # Full @playwright/test API reference
-│       ├── run.js           # Test runner (wraps npx playwright test)
-│       └── package.json     # Skill dependencies (@playwright/test)
+│       └── API_REFERENCE.md # Full @playwright/test API reference
 ├── README.md
 ├── CONTRIBUTING.md
 └── LICENSE
@@ -191,9 +171,12 @@ Tests are committed to your project's source control and run via `npx playwright
 
 ## Dependencies
 
+The skill itself has no dependencies — it's two markdown files.
+
+Your project will need:
 - Node.js ≥ 18
-- `@playwright/test` ^1.58.2 (installed in both the skill and your project)
-- Chromium (installed via `npm run setup`)
+- `@playwright/test` (Claude installs this when writing tests)
+- Chromium (`npx playwright install chromium`, run once after `@playwright/test` is installed)
 
 ## Troubleshooting
 
@@ -205,15 +188,14 @@ npm install --save-dev @playwright/test && npx playwright install chromium
 
 **Tests failing due to wrong base URL?**
 Set `BASE_URL` when running: `BASE_URL=http://localhost:4000 npx playwright test`
-Or update `playwright.config.ts` to match your dev server port.
+Or update the `BASE_URL` constant at the top of `playwright.config.ts`.
 
 **Tests pass locally but fail in CI?**
-Check that your CI workflow starts the app before running tests. The `webServer` config in `playwright.config.ts` handles this automatically if configured correctly.
+Ensure the CI workflow has a `npm run build` step before `npx playwright test`, and that all required secrets (`TEST_EMAIL`, `TEST_PASSWORD`, etc.) are set in repository settings.
 
-**Install all browsers?**
+**Want to run additional browsers?**
 ```bash
-cd .claude/skills/playwright-skill  # or your install path
-npm run install-all-browsers
+npx playwright install firefox webkit
 ```
 
 ## Learn More
