@@ -8,7 +8,7 @@
       "name": "playwright-test",
       "source": "./",
       "description": "Claude Code Skill for writing CI-ready E2E test suites with @playwright/test. Explores project structure, writes persistent spec files and playwright.config.ts, and generates CI workflow configs for GitHub Actions and GitLab CI.",
-      "version": "5.0.0",
+      "version": "1.0.0",
       "author": {
         "name": "zizzfizzix"
       },

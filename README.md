@@ -1,6 +1,6 @@
-# Playwright Skill for Claude Code
+# playwright-test
 
-**Write CI-ready E2E test suites with `@playwright/test`**
+**A Claude Code skill that writes CI-ready E2E test suites with `@playwright/test`**
 
 A [Claude Skill](https://docs.claude.com/en/docs/claude-code/skills) that enables Claude to write complete, persistent end-to-end test suites for your project — exploring the codebase first to understand the app, then generating `*.spec.ts` files, `playwright.config.ts`, and CI workflow configs ready to run in GitHub Actions or GitLab CI.
 
