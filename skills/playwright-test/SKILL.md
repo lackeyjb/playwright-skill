@@ -367,7 +367,7 @@ e2e-tests:
     TEST_PASSWORD: $TEST_PASSWORD
     # DATABASE_URL: $DATABASE_URL
   artifacts:
-    when: on_failure
+    when: always  # upload even on pass — catches flaky tests that eventually pass
     paths:
       - playwright-report/
       - test-results/

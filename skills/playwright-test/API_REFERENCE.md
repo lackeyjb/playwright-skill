@@ -36,7 +36,7 @@ Before using this skill, ensure Playwright is available:
 npm list @playwright/test 2>/dev/null || echo "@playwright/test not installed"
 
 # Install (if needed) — run from the project, not the skill directory
-npm install --save-dev @playwright/test@^1.58.2
+npm install --save-dev @playwright/test
 npx playwright install chromium
 ```
 
@@ -541,7 +541,7 @@ testData.forEach(({ username, password, expected }) => {
 Install `@axe-core/playwright` (maintained by Deque, works with `@playwright/test`):
 
 ```bash
-npm install --save-dev @axe-core/playwright@^4.11.1
+npm install --save-dev @axe-core/playwright
 ```
 
 ```typescript

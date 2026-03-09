@@ -92,7 +92,7 @@ Use conventional commits format:
 Examples:
 ```
 feat: add mobile device emulation helper
-fix: resolve module resolution issue in run.js
+fix: correct webServer command for Vite projects in CI
 docs: update installation instructions
 ```
 

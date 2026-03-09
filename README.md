@@ -117,7 +117,7 @@ Claude will:
 "Also generate a GitHub Actions workflow for these tests"
 ```
 
-Claude writes `.github/workflows/e2e.yml` with browser install, test execution, and artifact upload on failure.
+Claude writes `.github/workflows/e2e.yml` with browser install, build step, test execution, and artifact upload on every run.
 
 ### Test Specific Flows
 
@@ -163,7 +163,7 @@ When Claude uses this skill, it writes to your project (not the skill directory)
 |------|----------|---------|
 | `playwright.config.ts` | project root | CI-ready config with `forbidOnly`, retries, artifact capture |
 | `e2e/*.spec.ts` | project `e2e/` dir | Test spec files using `@playwright/test` |
-| `e2e/global-setup.ts` | project `e2e/` dir | Auth setup: logs in once, saves `storageState` |
+| `e2e/auth.setup.ts` | project `e2e/` dir | Auth setup project: logs in once, saves `storageState` |
 | `.github/workflows/e2e.yml` | project | GitHub Actions CI workflow (optional) |
 | `.gitignore` entries | project | Excludes `test-results/`, `playwright-report/`, `e2e/.auth/` |
 
