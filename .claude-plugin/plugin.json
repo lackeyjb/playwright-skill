@@ -1,12 +1,15 @@
 {
-  "name": "playwright-skill",
+  "name": "playwright-e2e",
   "version": "5.0.0",
   "description": "Claude Code Skill for writing CI-ready E2E test suites with @playwright/test. Explores project structure, writes persistent spec files and playwright.config.ts, and generates CI workflow configs for GitHub Actions and GitLab CI.",
   "author": {
-    "name": "lackeyjb"
+    "name": "zizzfizzix"
   },
+  "contributors": [
+    { "name": "lackeyjb" }
+  ],
   "license": "MIT",
-  "repository": "https://github.com/lackeyjb/playwright-skill",
+  "repository": "https://github.com/zizzfizzix/playwright-skill",
   "keywords": [
     "claude-skill",
     "claude-code",

@@ -29,10 +29,10 @@ Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/p
 This repository is structured as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/plugins) with a nested skill directory.
 
 ```
-playwright-skill/              # Plugin root
+playwright-skill/              # Plugin root (GitHub repo name)
 ├── .claude-plugin/           # Plugin metadata
 └── skills/
-    └── playwright-skill/     # The actual skill Claude discovers
+    └── playwright-e2e/        # The skill Claude discovers (/playwright-e2e)
         └── SKILL.md
 ```
 
@@ -45,7 +45,7 @@ playwright-skill/              # Plugin root
 /plugin marketplace add zizzfizzix/playwright-skill
 
 # Install the plugin
-/plugin install playwright-skill@playwright-skill
+/plugin install playwright-e2e@playwright-e2e
 ```
 
 No further setup needed — the skill has no dependencies of its own.
@@ -55,12 +55,12 @@ No further setup needed — the skill has no dependencies of its own.
 ### Option 2: Standalone Global Installation
 
 ```bash
-git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/pw-e2e-temp
 
 mkdir -p ~/.claude/skills
-cp -r /tmp/playwright-skill-temp/skills/playwright-skill ~/.claude/skills/
+cp -r /tmp/pw-e2e-temp/skills/playwright-e2e ~/.claude/skills/
 
-rm -rf /tmp/playwright-skill-temp
+rm -rf /tmp/pw-e2e-temp
 ```
 
 ---
@@ -68,12 +68,12 @@ rm -rf /tmp/playwright-skill-temp
 ### Option 3: Project-Specific Installation
 
 ```bash
-git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/playwright-skill-temp
+git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/pw-e2e-temp
 
 mkdir -p .claude/skills
-cp -r /tmp/playwright-skill-temp/skills/playwright-skill .claude/skills/
+cp -r /tmp/pw-e2e-temp/skills/playwright-e2e .claude/skills/
 
-rm -rf /tmp/playwright-skill-temp
+rm -rf /tmp/pw-e2e-temp
 ```
 
 The skill has no dependencies of its own. `@playwright/test` is installed into your **project** by Claude when writing tests.
@@ -82,7 +82,7 @@ The skill has no dependencies of its own. `@playwright/test` is installed into y
 
 ### Verify Installation
 
-Run `/help` in Claude Code to confirm the skill is loaded. You should see `playwright-skill` listed.
+Run `/help` in Claude Code to confirm the skill is loaded. You should see `playwright-e2e` listed.
 
 ## Quick Start
 
@@ -147,7 +147,7 @@ playwright-skill/
 │   ├── plugin.json          # Plugin metadata
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
-│   └── playwright-skill/
+│   └── playwright-e2e/
 │       ├── SKILL.md         # Skill instructions Claude reads
 │       └── API_REFERENCE.md # Full @playwright/test API reference
 ├── README.md
@@ -203,7 +203,7 @@ npx playwright install firefox webkit
 - [Claude Code Skills Documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
 - [Playwright Documentation](https://playwright.dev/docs/intro)
-- [API_REFERENCE.md](skills/playwright-skill/API_REFERENCE.md) — Full `@playwright/test` API reference
+- [API_REFERENCE.md](skills/playwright-e2e/API_REFERENCE.md) — Full `@playwright/test` API reference
 
 ## Contributing
 

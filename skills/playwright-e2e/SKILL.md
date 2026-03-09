@@ -1,5 +1,5 @@
 ---
-name: playwright-skill
+name: playwright-e2e
 description: Write CI-ready E2E test suites with Playwright Test. Explores the project to understand the app's structure and framework, then writes persistent *.spec.ts test files to the project's test directory and generates playwright.config.ts. Use when you need to write browser-based end-to-end tests that run in automated CI pipelines (GitHub Actions, GitLab CI, etc.).
 argument-hint: [project-path or spec-file] [--headed] [--grep <pattern>]
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm install*), Bash(npx playwright*)
