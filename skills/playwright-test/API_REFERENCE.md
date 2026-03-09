@@ -177,8 +177,8 @@ await page.getByLabel('Email').fill('user@example.com');
 await page.getByPlaceholder('Enter your name').fill('John Doe');
 
 // Clear and type character by character (simulates real typing)
-await page.locator('#username').clear();
-await page.locator('#username').pressSequentially('newuser', { delay: 100 });
+await page.getByLabel('Username').clear();
+await page.getByLabel('Username').pressSequentially('newuser', { delay: 100 });
 
 // Checkbox
 await page.getByLabel('I agree').check();

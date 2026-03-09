@@ -47,10 +47,10 @@ Glob: <project-root>/app/**/page.tsx
 Glob: <project-root>/pages/**/*.tsx
 
 # React Router (find the router definition)
-Grep: "createBrowserRouter\|<Route\|<Routes" in src/
+Grep: "createBrowserRouter|<Route|<Routes" in src/
 
 # Express / Fastify
-Grep: "app.get\|router.get\|fastify.get" in src/
+Grep: "app\.get|router\.get|fastify\.get" in src/
 ```
 
 ### Auth Flow
@@ -58,7 +58,7 @@ Grep: "app.get\|router.get\|fastify.get" in src/
 Read the actual login UI, not docs — you need the real field labels and post-login URL:
 
 ```
-Grep: "login\|signin\|sign-in" in src/ for the login page/component
+Grep: "login|signin|sign-in" in src/ for the login page/component
 Read: the login component/page file
 ```
 
@@ -85,7 +85,7 @@ Avoid duplicating coverage that already exists:
 ```
 Glob: <project-root>/e2e/**/*.spec.ts
 Glob: <project-root>/cypress/**/*.cy.ts
-Grep: "test(\|it(\|describe(" in src/ — unit/integration test coverage
+Grep: "test\(|it\(|describe\(" in src/ — unit/integration test coverage
 ```
 
 After this exploration you should know:
