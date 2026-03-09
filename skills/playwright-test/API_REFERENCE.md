@@ -159,7 +159,7 @@ await row.locator('button').click();
 await page.locator('button').nth(2).click();
 
 // Combining conditions
-await page.locator('button').and(page.locator('[disabled]')).count();
+await expect(page.locator('button').and(page.locator('[disabled]'))).toHaveCount(1);
 
 // Parent/child navigation
 const cell = page.locator('td').filter({ hasText: 'Active' });
@@ -206,19 +206,19 @@ await page.setInputFiles('input[type="file"]', [
 ### Mouse Actions
 
 ```javascript
-// Click variations
-await page.click('button');                          // Left click
-await page.click('button', { button: 'right' });    // Right click
-await page.dblclick('button');                       // Double click
-await page.click('button', { position: { x: 10, y: 10 } });  // Click at position
+// Click variations (use locator methods, not page.click(selector))
+await page.getByRole('button').click();                                    // Left click
+await page.getByRole('button').click({ button: 'right' });                // Right click
+await page.getByRole('button').dblclick();                                 // Double click
+await page.getByRole('button').click({ position: { x: 10, y: 10 } });   // Click at position
 
 // Hover
-await page.hover('.menu-item');
+await page.getByRole('menuitem', { name: 'Settings' }).hover();
 
-// Drag and drop
-await page.dragAndDrop('#source', '#target');
+// Drag and drop (locator API)
+await page.locator('#source').dragTo(page.locator('#target'));
 
-// Manual drag
+// Manual drag (low-level mouse API for complex gestures)
 await page.locator('#source').hover();
 await page.mouse.down();
 await page.locator('#target').hover();
@@ -595,11 +595,11 @@ jobs:
 
 ## Best Practices
 
-1. **Test Organization** - Use descriptive test names, group related tests
-2. **Selector Strategy** - Prefer data-testid attributes, use role-based selectors
-3. **Waiting** - Use Playwright's auto-waiting, avoid hard-coded delays
-4. **Error Handling** - Add proper error messages, take screenshots on failure
-5. **Performance** - Run tests in parallel, reuse authentication state
+1. **Test Organization** - Use descriptive test names, group related tests with `describe`
+2. **Selector Strategy** - Prefer role-based selectors (`getByRole`, `getByLabel`), then test IDs (`getByTestId`); avoid CSS classes/IDs
+3. **Waiting** - Rely on Playwright's auto-waiting and `expect` assertions; never use `waitForTimeout`
+4. **Auth efficiency** - Use the setup project pattern (`auth.setup.ts`) to log in once and share `storageState` across all tests
+5. **CI artifacts** - Upload `playwright-report/` on every run (`if: always()`); configure `screenshot: 'only-on-failure'` and `trace: 'on-first-retry'`
 
 ## Common Patterns & Solutions
 
