@@ -32,7 +32,7 @@ This repository is structured as a [Claude Code Plugin](https://docs.claude.com/
 playwright-skill/              # Plugin root (GitHub repo name)
 ├── .claude-plugin/           # Plugin metadata
 └── skills/
-    └── playwright-e2e/        # The skill Claude discovers (/playwright-e2e)
+    └── playwright-test/        # The skill Claude discovers (/playwright-test)
         └── SKILL.md
 ```
 
@@ -45,7 +45,7 @@ playwright-skill/              # Plugin root (GitHub repo name)
 /plugin marketplace add zizzfizzix/playwright-skill
 
 # Install the plugin
-/plugin install playwright-e2e@playwright-e2e
+/plugin install playwright-test@playwright-test
 ```
 
 No further setup needed — the skill has no dependencies of its own.
@@ -58,7 +58,7 @@ No further setup needed — the skill has no dependencies of its own.
 git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/pw-e2e-temp
 
 mkdir -p ~/.claude/skills
-cp -r /tmp/pw-e2e-temp/skills/playwright-e2e ~/.claude/skills/
+cp -r /tmp/pw-e2e-temp/skills/playwright-test ~/.claude/skills/
 
 rm -rf /tmp/pw-e2e-temp
 ```
@@ -71,7 +71,7 @@ rm -rf /tmp/pw-e2e-temp
 git clone https://github.com/zizzfizzix/playwright-skill.git /tmp/pw-e2e-temp
 
 mkdir -p .claude/skills
-cp -r /tmp/pw-e2e-temp/skills/playwright-e2e .claude/skills/
+cp -r /tmp/pw-e2e-temp/skills/playwright-test .claude/skills/
 
 rm -rf /tmp/pw-e2e-temp
 ```
@@ -82,7 +82,7 @@ The skill has no dependencies of its own. `@playwright/test` is installed into y
 
 ### Verify Installation
 
-Run `/help` in Claude Code to confirm the skill is loaded. You should see `playwright-e2e` listed.
+Run `/help` in Claude Code to confirm the skill is loaded. You should see `playwright-test` listed.
 
 ## Quick Start
 
@@ -147,7 +147,7 @@ playwright-skill/
 │   ├── plugin.json          # Plugin metadata
 │   └── marketplace.json     # Marketplace configuration
 ├── skills/
-│   └── playwright-e2e/
+│   └── playwright-test/
 │       ├── SKILL.md         # Skill instructions Claude reads
 │       └── API_REFERENCE.md # Full @playwright/test API reference
 ├── README.md
@@ -203,7 +203,7 @@ npx playwright install firefox webkit
 - [Claude Code Skills Documentation](https://docs.claude.com/en/docs/claude-code/skills)
 - [Claude Code Plugins Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
 - [Playwright Documentation](https://playwright.dev/docs/intro)
-- [API_REFERENCE.md](skills/playwright-e2e/API_REFERENCE.md) — Full `@playwright/test` API reference
+- [API_REFERENCE.md](skills/playwright-test/API_REFERENCE.md) — Full `@playwright/test` API reference
 
 ## Contributing
 

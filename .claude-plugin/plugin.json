@@ -1,5 +1,5 @@
 {
-  "name": "playwright-e2e",
+  "name": "playwright-test",
   "version": "5.0.0",
   "description": "Claude Code Skill for writing CI-ready E2E test suites with @playwright/test. Explores project structure, writes persistent spec files and playwright.config.ts, and generates CI workflow configs for GitHub Actions and GitLab CI.",
   "author": {

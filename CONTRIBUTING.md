@@ -103,7 +103,7 @@ playwright-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # Plugin metadata (name, version, author)
 │   └── marketplace.json     # Marketplace distribution config
-├── skills/playwright-e2e/
+├── skills/playwright-test/
 │   ├── SKILL.md             # Skill instructions — keep under 500 lines
 │   └── API_REFERENCE.md     # Full @playwright/test API reference
 ├── README.md
@@ -116,7 +116,7 @@ playwright-skill/
 Before submitting:
 1. Load locally with `claude --plugin-dir ./` and test against a real project
 2. Verify SKILL.md examples produce working tests
-3. Check the skill triggers correctly in Claude Code — auto via description, and manually via `/playwright-e2e`
+3. Check the skill triggers correctly in Claude Code — auto via description, and manually via `/playwright-test`
 
 ## Questions?
 
