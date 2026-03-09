@@ -28,7 +28,7 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
    - If **multiple servers found**: Ask user which one to test
    - If **no servers found**: Ask for URL or offer to help start dev server
 
-2. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.js`
+2. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.js`. If the user wants to save scripts, set `PW_SCRIPT_DIR` (see [Persisting Test Scripts](#persisting-test-scripts))
 
 3. **Use visible browser by default** - Always use `headless: false` unless user specifically requests headless mode
 
@@ -326,6 +326,50 @@ const data = await helpers.extractTableData(page, 'table.results');
 
 See `lib/helpers.js` for full list.
 
+## Persisting Test Scripts
+
+By default, scripts are written to `/tmp/` and auto-cleaned by the OS. To save scripts permanently, set the `PW_SCRIPT_DIR` environment variable to a directory of your choice.
+
+When set, `run.js` automatically copies the executed script to that directory after each run.
+
+### Configuration
+
+```bash
+# Save scripts to a folder in your project
+export PW_SCRIPT_DIR=./playwright-tests
+
+# Or inline per-run
+PW_SCRIPT_DIR=./playwright-tests cd $SKILL_DIR && node run.js /tmp/playwright-test-login.js
+```
+
+### Workflow with persistence enabled
+
+**Step 1: Set PW_SCRIPT_DIR (once, in your shell profile or .env)**
+
+```bash
+export PW_SCRIPT_DIR=~/my-project/playwright-tests
+```
+
+**Step 2: Run as normal — scripts are auto-saved**
+
+```bash
+cd $SKILL_DIR && node run.js /tmp/playwright-test-login.js
+# Output: 💾 Script saved to: ~/my-project/playwright-tests/playwright-test-login.js
+```
+
+**Step 3: Re-run saved scripts directly**
+
+```bash
+cd $SKILL_DIR && node run.js ~/my-project/playwright-tests/playwright-test-login.js
+```
+
+### Notes
+
+- The directory is created automatically if it doesn't exist
+- If a script with the same filename already exists, a timestamp suffix is added (e.g. `playwright-test-login-1234567890.js`)
+- Only file-based executions are saved; inline code and stdin are not persisted
+- Scripts from `/tmp/` are still cleaned up by the OS as usual; the saved copy in `PW_SCRIPT_DIR` is permanent
+
 ## Custom HTTP Headers
 
 Configure custom headers for all HTTP requests via environment variables. Useful for:
@@ -386,6 +430,7 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 - **CRITICAL: Detect servers FIRST** - Always run `detectDevServers()` before writing test code for localhost testing
 - **Custom headers** - Use `PW_HEADER_NAME`/`PW_HEADER_VALUE` env vars to identify automated traffic to your backend
 - **Use /tmp for test files** - Write to `/tmp/playwright-test-*.js`, never to skill directory or user's project
+- **Persist scripts** - Set `PW_SCRIPT_DIR=./playwright-tests` to auto-save scripts for reuse; remind users of this option when they ask to re-run or save tests
 - **Parameterize URLs** - Put detected/provided URL in a `TARGET_URL` constant at the top of every script
 - **DEFAULT: Visible browser** - Always use `headless: false` unless user explicitly asks for headless mode
 - **Headless mode** - Only use `headless: true` when user specifically requests "headless" or "background" execution

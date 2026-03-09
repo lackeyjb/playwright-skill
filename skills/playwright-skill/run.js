@@ -47,7 +47,35 @@ function installPlaywright() {
 }
 
 /**
- * Get code to execute from various sources
+ * Save script to PW_SCRIPT_DIR if configured
+ */
+function maybeSaveScript(sourceFile) {
+  const scriptDir = process.env.PW_SCRIPT_DIR;
+  if (!scriptDir || !sourceFile) return;
+
+  try {
+    if (!fs.existsSync(scriptDir)) {
+      fs.mkdirSync(scriptDir, { recursive: true });
+    }
+
+    const filename = path.basename(sourceFile);
+    const destPath = path.join(scriptDir, filename);
+
+    // Avoid overwriting an existing file with the same name
+    const finalPath = fs.existsSync(destPath)
+      ? path.join(scriptDir, `${path.basename(filename, '.js')}-${Date.now()}.js`)
+      : destPath;
+
+    fs.copyFileSync(sourceFile, finalPath);
+    console.log(`💾 Script saved to: ${finalPath}`);
+  } catch (e) {
+    console.warn(`⚠️  Could not save script to ${scriptDir}: ${e.message}`);
+  }
+}
+
+/**
+ * Get code to execute from various sources.
+ * Returns { code, sourceFile } where sourceFile is set when input is a file path.
  */
 function getCodeToExecute() {
   const args = process.argv.slice(2);
@@ -56,19 +84,19 @@ function getCodeToExecute() {
   if (args.length > 0 && fs.existsSync(args[0])) {
     const filePath = path.resolve(args[0]);
     console.log(`📄 Executing file: ${filePath}`);
-    return fs.readFileSync(filePath, 'utf8');
+    return { code: fs.readFileSync(filePath, 'utf8'), sourceFile: filePath };
   }
 
   // Case 2: Inline code provided as argument
   if (args.length > 0) {
     console.log('⚡ Executing inline code');
-    return args.join(' ');
+    return { code: args.join(' '), sourceFile: null };
   }
 
   // Case 3: Code from stdin
   if (!process.stdin.isTTY) {
     console.log('📥 Reading from stdin');
-    return fs.readFileSync(0, 'utf8');
+    return { code: fs.readFileSync(0, 'utf8'), sourceFile: null };
   }
 
   // No input
@@ -194,8 +222,11 @@ async function main() {
   }
 
   // Get code to execute
-  const rawCode = getCodeToExecute();
+  const { code: rawCode, sourceFile } = getCodeToExecute();
   const code = wrapCodeIfNeeded(rawCode);
+
+  // Persist script to PW_SCRIPT_DIR if configured
+  maybeSaveScript(sourceFile);
 
   // Create temporary file for execution
   const tempFile = path.join(__dirname, `.temp-execution-${Date.now()}.js`);
