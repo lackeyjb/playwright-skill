@@ -64,12 +64,14 @@ Enhancement suggestions are welcome! Please:
 
 ## Development Guidelines
 
-### Code Style
+### Content Guidelines
 
-- Use clear, descriptive variable names
-- Add comments for complex logic
-- Keep functions focused on a single responsibility
-- Follow existing patterns in the codebase
+The skill is two markdown files — contributions are primarily documentation changes.
+
+- Match the tone and conciseness of the existing content
+- Prefer short, direct sentences over long explanations
+- New code examples must use the locator API (`getByRole`, `getByLabel`, `getByTestId`); avoid CSS class/ID selectors
+- Keep all TypeScript examples valid — check types compile before submitting
 
 ### SKILL.md Guidelines
 

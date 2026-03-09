@@ -12,7 +12,7 @@ Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/p
 - **Persistent test files** — Writes to your project's `e2e/` directory, not a temp folder, so tests are committed to source control
 - **CI-first defaults** — Headless, no `slowMo`, proper `playwright.config.ts` with `forbidOnly`, retries, and artifact capture
 - **`@playwright/test` patterns** — Proper `test()` / `expect()` / `describe()` blocks, role-based selectors, fixtures, Page Object Model
-- **CI config generation** — GitHub Actions and GitLab CI templates with artifact upload on failure
+- **CI config generation** — GitHub Actions and GitLab CI templates with build step, secrets guidance, and artifact upload on every run
 
 
 ## How It Works
