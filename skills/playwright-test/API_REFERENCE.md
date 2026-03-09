@@ -188,19 +188,16 @@ await page.getByLabel('Subscribe').uncheck();
 await page.getByLabel('Option 2').check();
 
 // Select dropdown
-await page.selectOption('select#country', 'usa');
-await page.selectOption('select#country', { label: 'United States' });
-await page.selectOption('select#country', { index: 2 });
+await page.getByLabel('Country').selectOption('usa');
+await page.getByLabel('Country').selectOption({ label: 'United States' });
+await page.getByLabel('Country').selectOption({ index: 2 });
 
 // Multi-select
-await page.selectOption('select#colors', ['red', 'blue', 'green']);
+await page.getByLabel('Colors').selectOption(['red', 'blue', 'green']);
 
 // File upload
-await page.setInputFiles('input[type="file"]', 'path/to/file.pdf');
-await page.setInputFiles('input[type="file"]', [
-  'file1.pdf',
-  'file2.pdf'
-]);
+await page.getByLabel('Upload file').setInputFiles('path/to/file.pdf');
+await page.getByLabel('Upload file').setInputFiles(['file1.pdf', 'file2.pdf']);
 ```
 
 ### Mouse Actions
@@ -271,7 +268,7 @@ await page.waitForFunction(
 
 // Wait for response
 const responsePromise = page.waitForResponse('**/api/users');
-await page.click('button#load-users');
+await page.getByRole('button', { name: 'Load users' }).click();
 const response = await responsePromise;
 
 // Wait for request

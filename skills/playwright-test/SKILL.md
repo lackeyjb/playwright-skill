@@ -173,7 +173,7 @@ export default defineConfig({
 - `retries: 2`: Handles flakiness in CI
 - `workers: 1`: Avoids resource contention on CI runners
 - `headless: true`: No display required in CI
-- `screenshot/video/trace`: Artifacts on failure for debugging
+- `screenshot: 'only-on-failure'`, `video/trace: 'on-first-retry'`: capture artifacts on failure or retry; all available in the uploaded report
 - `BASE_URL` constant: port defined once — both `use.baseURL` and `webServer.url` reference it
 - `webServer.command`: serves the **production build** in CI (see CI workflow for build step)
 
