@@ -58,7 +58,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'on-first-retry',
     headless: true,
   },
   projects: [
@@ -120,30 +120,32 @@ test('should submit form and redirect', async ({ page }) => {
 
 ### Best Practices for Selectors
 
-```javascript
-// PREFERRED: Data attributes (most stable)
-await page.locator('[data-testid="submit-button"]').click();
-await page.locator('[data-cy="user-input"]').fill('text');
+Prefer in this order (most to least resilient):
 
-// GOOD: Role-based selectors (accessible)
+```javascript
+// 1. BEST: Role + name (semantic, accessible, mirrors how users perceive the UI)
 await page.getByRole('button', { name: 'Submit' }).click();
 await page.getByRole('textbox', { name: 'Email' }).fill('user@example.com');
 await page.getByRole('heading', { level: 1 }).click();
 
-// GOOD: Text content (for unique text)
+// 2. GOOD: Label (form inputs)
+await page.getByLabel('Email address').fill('user@example.com');
+
+// 3. GOOD: Test ID (explicit, stable — add data-testid to components you own)
+await page.getByTestId('submit-button').click();
+await page.getByTestId('user-input').fill('text');
+
+// 4. OK: Text content (unique text only)
 await page.getByText('Sign in').click();
 await page.getByText(/welcome back/i).click();
 
-// OK: Semantic HTML
-await page.locator('button[type="submit"]').click();
-await page.locator('input[name="email"]').fill('test@test.com');
+// 5. OK: Placeholder
+await page.getByPlaceholder('Search...').fill('query');
 
-// AVOID: Classes and IDs (can change frequently)
-await page.locator('.btn-primary').click();  // Avoid
-await page.locator('#submit').click();       // Avoid
-
-// LAST RESORT: Complex CSS/XPath
-await page.locator('div.container > form > button').click();  // Fragile
+// AVOID: CSS classes/IDs/complex selectors (implementation details that change)
+await page.locator('.btn-primary').click();              // Avoid
+await page.locator('#submit').click();                   // Avoid
+await page.locator('div.container > form > button').click(); // Fragile
 ```
 
 ### Advanced Locator Patterns
@@ -174,9 +176,9 @@ await row.locator('button.edit').click();
 await page.getByLabel('Email').fill('user@example.com');
 await page.getByPlaceholder('Enter your name').fill('John Doe');
 
-// Clear and type
+// Clear and type character by character (simulates real typing)
 await page.locator('#username').clear();
-await page.locator('#username').type('newuser', { delay: 100 });
+await page.locator('#username').pressSequentially('newuser', { delay: 100 });
 
 // Checkbox
 await page.getByLabel('I agree').check();
@@ -329,29 +331,25 @@ await expect(page.locator('input[type="checkbox"]')).toBeChecked();
 
 ### Basic Page Object
 
-```javascript
-// pages/LoginPage.js
-class LoginPage {
-  constructor(page) {
-    this.page = page;
-    this.usernameInput = page.locator('input[name="username"]');
-    this.passwordInput = page.locator('input[name="password"]');
-    this.submitButton = page.locator('button[type="submit"]');
-    this.errorMessage = page.locator('.error-message');
-  }
+```typescript
+// pages/LoginPage.ts
+import { type Page } from '@playwright/test';
+
+export class LoginPage {
+  constructor(private readonly page: Page) {}
 
   async navigate() {
     await this.page.goto('/login');
   }
 
-  async login(username, password) {
-    await this.usernameInput.fill(username);
-    await this.passwordInput.fill(password);
-    await this.submitButton.click();
+  async login(email: string, password: string) {
+    await this.page.getByLabel('Email').fill(email);
+    await this.page.getByLabel('Password').fill(password);
+    await this.page.getByRole('button', { name: /sign in/i }).click();
   }
 
   async getErrorMessage() {
-    return await this.errorMessage.textContent();
+    return this.page.getByRole('alert').textContent();
   }
 }
 
@@ -435,16 +433,28 @@ await expect(page).toHaveScreenshot('homepage.png');
 
 ## Mobile Testing
 
-```javascript
-// Device emulation
-const { devices } = require('playwright');
-const iPhone = devices['iPhone 12'];
+Configure device emulation in `playwright.config.ts` — use `@playwright/test` fixtures, not the raw `playwright` package:
 
-const context = await browser.newContext({
-  ...iPhone,
-  locale: 'en-US',
-  permissions: ['geolocation'],
-  geolocation: { latitude: 37.7749, longitude: -122.4194 }
+```typescript
+// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 5'] } },
+    { name: 'mobile-safari', use: { ...devices['iPhone 12'] } },
+  ],
+});
+```
+
+For geolocation/permissions, set them in `use` per project or per test:
+
+```typescript
+test('uses geolocation', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 37.7749, longitude: -122.4194 });
+  await page.goto('/map');
 });
 ```
 
@@ -476,12 +486,13 @@ page.on('pageerror', error => console.log('Page error:', error));
 
 ## Performance Testing
 
-```javascript
-// Measure page load time
-const startTime = Date.now();
-await page.goto('https://example.com');
-const loadTime = Date.now() - startTime;
-console.log(`Page loaded in ${loadTime}ms`);
+```typescript
+test('page loads within budget', async ({ page }) => {
+  const startTime = Date.now();
+  await page.goto('/');
+  const loadTime = Date.now() - startTime;
+  expect(loadTime).toBeLessThan(3000); // fail the test if too slow
+});
 ```
 
 ## Parallel Execution
@@ -517,10 +528,10 @@ const testData = [
 testData.forEach(({ username, password, expected }) => {
   test(`login with ${username}`, async ({ page }) => {
     await page.goto('/login');
-    await page.fill('#username', username);
-    await page.fill('#password', password);
-    await page.click('button[type="submit"]');
-    await expect(page.locator('.message')).toHaveText(expected);
+    await page.getByLabel('Username').fill(username);
+    await page.getByLabel('Password').fill(password);
+    await page.getByRole('button', { name: /sign in/i }).click();
+    await expect(page.getByRole('status')).toHaveText(expected);
   });
 });
 ```
@@ -575,7 +586,7 @@ jobs:
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()  # upload even on pass — catches flaky tests that eventually pass
         with:
           name: playwright-report
           path: playwright-report/
