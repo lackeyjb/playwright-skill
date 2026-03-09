@@ -1,15 +1,9 @@
 ---
 name: playwright-skill
 description: Write CI-ready E2E test suites with Playwright Test. Explores the project to understand the app's structure and framework, then writes persistent *.spec.ts test files to the project's test directory and generates playwright.config.ts. Use when you need to write browser-based end-to-end tests that run in automated CI pipelines (GitHub Actions, GitLab CI, etc.).
+argument-hint: [project-path or spec-file] [--headed] [--grep <pattern>]
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm install*), Bash(npx playwright*), Bash(node ${CLAUDE_SKILL_DIR}/run.js*)
 ---
-
-**IMPORTANT - Path Resolution:**
-This skill can be installed in different locations. Before executing commands, determine the skill directory based on where you loaded this SKILL.md file and replace `$SKILL_DIR` with the actual path.
-
-Common installation paths:
-- Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
-- Manual global: `~/.claude/skills/playwright-skill`
-- Project-specific: `<project>/.claude/skills/playwright-skill`
 
 # Playwright E2E Test Suite Writer
 
@@ -206,13 +200,13 @@ test.describe('Homepage', () => {
 
 ```bash
 # Run all tests
-cd $SKILL_DIR && node run.js <project-root>
+cd ${CLAUDE_SKILL_DIR} && node run.js <project-root>
 
 # Run a specific spec file
-cd $SKILL_DIR && node run.js <project-root>/e2e/homepage.spec.ts
+cd ${CLAUDE_SKILL_DIR} && node run.js <project-root>/e2e/homepage.spec.ts
 
 # Run with headed browser for local debugging
-cd $SKILL_DIR && node run.js <project-root> --headed
+cd ${CLAUDE_SKILL_DIR} && node run.js <project-root> --headed
 ```
 
 **If tests fail:**
@@ -261,80 +255,49 @@ test.describe('Authentication', () => {
 
 ### Authenticated Tests — Global Setup (Recommended for CI)
 
-Log in once, save auth state, reuse across all tests. Far faster in CI than logging in per-test.
+Log in once per suite, save `storageState`, reuse across all tests. Dramatically faster than per-test login in CI.
 
 ```typescript
 // e2e/global-setup.ts
 import { chromium, type FullConfig } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
+import path from 'path'; import fs from 'fs';
 
 export default async function globalSetup(config: FullConfig) {
   const { baseURL } = config.projects[0].use;
   const authFile = path.join(__dirname, '.auth/user.json');
-
   fs.mkdirSync(path.dirname(authFile), { recursive: true });
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
-
   await page.goto(`${baseURL}/login`);
-  // Use the ACTUAL label text from the login form — read the component first
-  await page.getByLabel('Email').fill(process.env.TEST_EMAIL!);
+  await page.getByLabel('Email').fill(process.env.TEST_EMAIL!);   // use ACTUAL label from component
   await page.getByLabel('Password').fill(process.env.TEST_PASSWORD!);
   await page.getByRole('button', { name: /sign in/i }).click();
-  // Use the ACTUAL post-login URL — read the auth redirect logic first
-  await page.waitForURL('**/dashboard');
-
+  await page.waitForURL('**/dashboard');                           // use ACTUAL post-login URL
   await page.context().storageState({ path: authFile });
   await browser.close();
 }
 ```
 
+Wire it up in `playwright.config.ts`:
 ```typescript
-// playwright.config.ts — add globalSetup and storageState
-import { defineConfig } from '@playwright/test';
-
 export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
-  use: {
-    storageState: './e2e/.auth/user.json',  // reused by every test
-  },
+  use: { storageState: './e2e/.auth/user.json' },  // every test starts authenticated
   // ... rest of config
 });
 ```
 
+To opt a test **out** of auth (e.g., testing the login page itself):
 ```typescript
-// e2e/dashboard.spec.ts — already authenticated via storageState
-import { test, expect } from '@playwright/test';
-
-test('dashboard shows user data', async ({ page }) => {
-  await page.goto('/dashboard');
-  await expect(page.getByTestId('welcome-message')).toBeVisible();
-});
-```
-
-```typescript
-// e2e/auth.spec.ts — opt OUT of storageState for auth-specific tests
-import { test, expect } from '@playwright/test';
-
 test.use({ storageState: { cookies: [], origins: [] } });
-
-test('redirects unauthenticated users to login', async ({ page }) => {
-  await page.goto('/dashboard');
-  await expect(page).toHaveURL(/\/login/);
-});
 ```
 
-### Authenticated Tests — Per-Test Fixture (Simpler, fewer tests)
-
-For small suites where global setup is overkill. Uses correct `Page` type (not private internal API):
+### Per-Test Fixture (simpler, small suites only)
 
 ```typescript
 // e2e/fixtures.ts
 import { test as base, type Page } from '@playwright/test';
-
-// Named fixture — never shadow the built-in `page` fixture
 export const test = base.extend<{ loggedInPage: Page }>({
   loggedInPage: async ({ page }, use) => {
     await page.goto('/login');
@@ -345,129 +308,10 @@ export const test = base.extend<{ loggedInPage: Page }>({
     await use(page);
   },
 });
-
 export { expect } from '@playwright/test';
 ```
 
-### API Mocking
-
-```typescript
-// e2e/products.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('product list renders from API', async ({ page }) => {
-  // Mock the API response
-  await page.route('**/api/products', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([
-        { id: 1, name: 'Widget A', price: 9.99 },
-        { id: 2, name: 'Widget B', price: 19.99 },
-      ]),
-    });
-  });
-
-  await page.goto('/products');
-
-  await expect(page.getByText('Widget A')).toBeVisible();
-  await expect(page.getByText('Widget B')).toBeVisible();
-});
-```
-
-### Form Submission
-
-```typescript
-// e2e/contact.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('contact form submits successfully', async ({ page }) => {
-  await page.goto('/contact');
-
-  await page.getByLabel('Name').fill('Jane Doe');
-  await page.getByLabel('Email').fill('jane@example.com');
-  await page.getByLabel('Message').fill('Hello, this is a test message.');
-  await page.getByRole('button', { name: /send/i }).click();
-
-  await expect(page.getByRole('alert', { name: /success/i })).toBeVisible();
-});
-```
-
-### Navigation & Routing
-
-```typescript
-// e2e/navigation.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('Navigation', () => {
-  test('nav links route correctly', async ({ page }) => {
-    await page.goto('/');
-
-    for (const [linkName, expectedPath] of [
-      ['About', '/about'],
-      ['Pricing', '/pricing'],
-      ['Blog', '/blog'],
-    ]) {
-      await page.goto('/');
-      await page.getByRole('link', { name: linkName }).click();
-      await expect(page).toHaveURL(expectedPath);
-    }
-  });
-
-  test('browser back/forward works', async ({ page }) => {
-    await page.goto('/');
-    await page.goto('/about');
-    await page.goBack();
-    await expect(page).toHaveURL('/');
-    await page.goForward();
-    await expect(page).toHaveURL('/about');
-  });
-});
-```
-
-### Page Object Model (complex apps)
-
-```typescript
-// e2e/pages/LoginPage.ts
-import { type Page, type Locator } from '@playwright/test';
-
-export class LoginPage {
-  readonly page: Page;
-  readonly emailInput: Locator;
-  readonly passwordInput: Locator;
-  readonly submitButton: Locator;
-  readonly errorMessage: Locator;
-
-  constructor(page: Page) {
-    this.page = page;
-    this.emailInput = page.getByLabel('Email');
-    this.passwordInput = page.getByLabel('Password');
-    this.submitButton = page.getByRole('button', { name: /sign in/i });
-    this.errorMessage = page.getByRole('alert');
-  }
-
-  async goto() {
-    await this.page.goto('/login');
-  }
-
-  async login(email: string, password: string) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
-    await this.submitButton.click();
-  }
-}
-
-// e2e/login.spec.ts
-import { test, expect } from '@playwright/test';
-import { LoginPage } from './pages/LoginPage';
-
-test('login flow', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.goto();
-  await loginPage.login('user@example.com', 'password123');
-  await expect(page).toHaveURL('/dashboard');
-});
-```
+For API mocking, form submission, navigation patterns, Page Object Model, and the full `@playwright/test` API, see [API_REFERENCE.md](API_REFERENCE.md).
 
 ---
 
@@ -497,8 +341,7 @@ jobs:
 
       - run: npm ci
 
-      # Cache Playwright browsers — avoids re-downloading ~200MB on every run
-      - uses: actions/cache@v4
+      - uses: actions/cache@v4  # cache browsers — avoids re-downloading ~200MB
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -508,31 +351,18 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      # Build the app BEFORE running tests.
-      # Tests run against the production build, not the dev server.
-      # A build failure here is clear and fast-fails with a useful error.
-      # Adjust this command for your framework:
-      #   Next.js:  npm run build
-      #   Vite:     npm run build  (then `npm run preview` serves it)
-      #   CRA:      npm run build  (then `serve -s build` serves it)
-      - name: Build app
+      - name: Build app  # build first — fails clearly if TypeScript/build errors exist
         run: npm run build
-        env:
-          # Pass any env vars the BUILD needs (API URLs, feature flags, etc.)
-          # These come from repository secrets — Settings > Secrets and variables > Actions
-          # NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        # env: NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}  # add build-time vars
 
       - name: Run E2E tests
         run: npx playwright test
         env:
           CI: true
-          # Auth credentials for test user — must be set as repository secrets
-          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}      # see CI Environment Variables section
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-          # Add any env vars the SERVER needs to start and run correctly:
           # DATABASE_URL: ${{ secrets.DATABASE_URL }}
           # NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          # JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -632,32 +462,15 @@ page.locator('#specific-id')
 
 ## Adding .gitignore Entries
 
-Always add these to the project's `.gitignore`:
-
 ```
 # Playwright test output
 /test-results/
 /playwright-report/
-
 # Saved auth state — contains session tokens, never commit
 /e2e/.auth/
 ```
 
-**Do NOT gitignore the Playwright browser cache** (`~/.cache/ms-playwright`). It lives outside the project, and in CI you should *cache it between runs* using your CI platform's cache action to avoid re-downloading ~200MB of browsers on every run.
-
-In GitHub Actions, add this before the browser install step:
-
-```yaml
-- uses: actions/cache@v4
-  id: playwright-cache
-  with:
-    path: ~/.cache/ms-playwright
-    key: playwright-${{ hashFiles('package-lock.json') }}
-
-- name: Install Playwright browsers
-  if: steps.playwright-cache.outputs.cache-hit != 'true'
-  run: npx playwright install --with-deps chromium
-```
+The browser cache (`~/.cache/ms-playwright`) lives outside the project — don't gitignore it. In CI, cache it between runs (the CI workflow above already includes `actions/cache@v4` for this) to avoid re-downloading ~200MB on every run.
 
 ---
 

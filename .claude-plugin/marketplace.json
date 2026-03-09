@@ -4,10 +4,6 @@
     "name": "lackeyjb",
     "email": "github@lackeyjb"
   },
-  "metadata": {
-    "description": "CI-ready E2E test suite writer using @playwright/test for Claude Code",
-    "version": "5.0.0"
-  },
   "plugins": [
     {
       "name": "playwright-skill",

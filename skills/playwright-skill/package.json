@@ -3,7 +3,9 @@
   "version": "5.0.0",
   "description": "CI-ready E2E test suite writer for Claude Code. Explores project structure and writes persistent @playwright/test spec files and config for automated CI pipelines.",
   "author": "lackeyjb",
-  "main": "run.js",
+  "bin": {
+    "playwright-skill": "./run.js"
+  },
   "scripts": {
     "setup": "npm install && npx playwright install chromium",
     "install-browsers": "npx playwright install chromium",
@@ -18,7 +20,7 @@
     "claude-skill",
     "playwright-test"
   ],
-  "dependencies": {
+  "devDependencies": {
     "@playwright/test": "^1.58.2"
   },
   "engines": {

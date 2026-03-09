@@ -18,11 +18,11 @@ Packaged as a [Claude Code Plugin](https://docs.claude.com/en/docs/claude-code/p
 ## How It Works
 
 1. Ask Claude to write E2E tests for your project
-2. Claude explores your project: reads `package.json`, finds the dev server command and port, checks for existing Playwright config and test files
+2. Claude explores your project: reads `package.json`, route files, auth components, and `.env.example` to understand the actual app
 3. Claude installs `@playwright/test` if missing, generates `playwright.config.ts` if absent
 4. Claude writes `*.spec.ts` files to your project's `e2e/` directory covering key user flows
-5. Optionally generates a GitHub Actions / GitLab CI workflow
-6. Tests run via `npx playwright test` — in CI or locally
+5. Optionally generates a GitHub Actions / GitLab CI workflow with a build step and secrets guidance
+6. Tests run via `npx playwright test` — locally against the dev server or in CI against a production build
 
 ## Installation
 
@@ -169,9 +169,7 @@ playwright-skill/
 │       ├── SKILL.md         # Skill instructions Claude reads
 │       ├── API_REFERENCE.md # Full @playwright/test API reference
 │       ├── run.js           # Test runner (wraps npx playwright test)
-│       ├── package.json     # Skill dependencies
-│       └── lib/
-│           └── helpers.js   # Optional utility functions
+│       └── package.json     # Skill dependencies (@playwright/test)
 ├── README.md
 ├── CONTRIBUTING.md
 └── LICENSE
@@ -185,8 +183,9 @@ When Claude uses this skill, it writes to your project (not the skill directory)
 |------|----------|---------|
 | `playwright.config.ts` | project root | CI-ready config with `forbidOnly`, retries, artifact capture |
 | `e2e/*.spec.ts` | project `e2e/` dir | Test spec files using `@playwright/test` |
+| `e2e/global-setup.ts` | project `e2e/` dir | Auth setup: logs in once, saves `storageState` |
 | `.github/workflows/e2e.yml` | project | GitHub Actions CI workflow (optional) |
-| `.gitignore` entries | project | Excludes `test-results/`, `playwright-report/` |
+| `.gitignore` entries | project | Excludes `test-results/`, `playwright-report/`, `e2e/.auth/` |
 
 Tests are committed to your project's source control and run via `npx playwright test`.
 

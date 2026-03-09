@@ -72,11 +72,11 @@ Enhancement suggestions are welcome! Please:
 
 ### SKILL.md Guidelines
 
+- Keep SKILL.md under 500 lines — move reference material to API_REFERENCE.md
 - Keep examples concise (8-15 lines)
-- Always show `headless: false` by default
-- Include error handling in examples
-- Add console.log statements for visibility
-- Reference README.md for advanced topics
+- `headless: true` is always the default — tests must run in CI without a display
+- Do not add `console.log` to test examples — it clutters CI output and is a code smell
+- Reference API_REFERENCE.md for advanced patterns (API mocking, POM, form submission)
 
 ### Commit Messages
 
@@ -99,32 +99,26 @@ docs: update installation instructions
 
 ```
 playwright-skill/
-├── SKILL.md           # Keep concise (~300 lines)
-├── README.md          # Full API reference
-├── PLUGIN_README.md   # Plugin distribution docs
-├── run.js             # Universal executor
-├── package.json       # Dependencies
-├── plugin.json        # Plugin metadata
-└── lib/
-    └── helpers.js     # Utility functions
+├── .claude-plugin/
+│   ├── plugin.json          # Plugin metadata (name, version, author)
+│   └── marketplace.json     # Marketplace distribution config
+├── skills/playwright-skill/
+│   ├── SKILL.md             # Skill instructions — keep under 500 lines
+│   ├── API_REFERENCE.md     # Full @playwright/test API reference
+│   ├── run.js               # Test runner (wraps npx playwright test)
+│   └── package.json         # devDependencies: @playwright/test
+├── README.md
+├── CONTRIBUTING.md
+└── LICENSE
 ```
-
-### Adding New Helpers
-
-When adding functions to `lib/helpers.js`:
-1. Add clear JSDoc comments
-2. Include error handling
-3. Export the function
-4. Update SKILL.md to mention it
-5. Add example usage
 
 ### Testing
 
 Before submitting:
-1. Test with a fresh installation
-2. Verify examples in SKILL.md work
+1. Test with a fresh installation (`npm run setup`)
+2. Verify examples in SKILL.md work against a real project
 3. Check that `run.js` handles edge cases
-4. Ensure browser opens in visible mode by default
+4. Verify the skill triggers correctly in Claude Code with `/playwright-skill`
 
 ## Questions?
 
