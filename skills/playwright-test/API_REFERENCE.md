@@ -163,8 +163,8 @@ await expect(page.locator('button').and(page.locator('[disabled]'))).toHaveCount
 
 // Parent/child navigation
 const cell = page.locator('td').filter({ hasText: 'Active' });
-const row = cell.locator('..');
-await row.locator('button.edit').click();
+const parentRow = cell.locator('..');
+await parentRow.getByRole('button', { name: 'Edit' }).click();
 ```
 
 ## Common Actions
@@ -605,7 +605,7 @@ jobs:
 ```javascript
 const [popup] = await Promise.all([
   page.waitForEvent('popup'),
-  page.click('button.open-popup')
+  page.getByRole('button', { name: 'Open popup' }).click(),
 ]);
 await popup.waitForLoadState();
 ```
@@ -615,7 +615,7 @@ await popup.waitForLoadState();
 ```javascript
 const [download] = await Promise.all([
   page.waitForEvent('download'),
-  page.click('button.download')
+  page.getByRole('button', { name: 'Download' }).click(),
 ]);
 await download.saveAs(`./downloads/${download.suggestedFilename()}`);
 ```
