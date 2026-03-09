@@ -135,13 +135,21 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'on-first-retry',
     headless: true,
   },
   projects: [
+    // If the app has authentication, add a setup project (see Auth Patterns below).
+    // Remove these two lines for apps with no login:
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'e2e/.auth/user.json', // remove if no auth
+      },
+      dependencies: ['setup'], // remove if no auth
     },
   ],
   webServer: {
@@ -253,62 +261,31 @@ test.describe('Authentication', () => {
 });
 ```
 
-### Authenticated Tests — Global Setup (Recommended for CI)
+### Authenticated Tests — Setup Project (Recommended)
 
-Log in once per suite, save `storageState`, reuse across all tests. Dramatically faster than per-test login in CI.
+The official Playwright auth pattern. Runs login as a real test, so failures show traces and screenshots rather than cryptic startup errors. Supports multiple roles naturally.
 
 ```typescript
-// e2e/global-setup.ts
-import { chromium, type FullConfig } from '@playwright/test';
-import path from 'path'; import fs from 'fs';
+// e2e/auth.setup.ts
+import { test as setup } from '@playwright/test';
 
-export default async function globalSetup(config: FullConfig) {
-  const { baseURL } = config.projects[0].use;
-  const authFile = path.join(__dirname, '.auth/user.json');
-  fs.mkdirSync(path.dirname(authFile), { recursive: true });
+const authFile = 'e2e/.auth/user.json';
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto(`${baseURL}/login`);
-  await page.getByLabel('Email').fill(process.env.TEST_EMAIL!);   // use ACTUAL label from component
+setup('authenticate', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(process.env.TEST_EMAIL!);     // ACTUAL label from component
   await page.getByLabel('Password').fill(process.env.TEST_PASSWORD!);
   await page.getByRole('button', { name: /sign in/i }).click();
-  await page.waitForURL('**/dashboard');                           // use ACTUAL post-login URL
+  await page.waitForURL('**/dashboard');                             // ACTUAL post-login URL
   await page.context().storageState({ path: authFile });
-  await browser.close();
-}
-```
-
-Wire it up in `playwright.config.ts`:
-```typescript
-export default defineConfig({
-  globalSetup: './e2e/global-setup.ts',
-  use: { storageState: './e2e/.auth/user.json' },  // every test starts authenticated
-  // ... rest of config
 });
 ```
+
+The `playwright.config.ts` template above already includes the `setup` project and `dependencies: ['setup']`. Every test starts authenticated via `storageState`.
 
 To opt a test **out** of auth (e.g., testing the login page itself):
 ```typescript
 test.use({ storageState: { cookies: [], origins: [] } });
-```
-
-### Per-Test Fixture (simpler, small suites only)
-
-```typescript
-// e2e/fixtures.ts
-import { test as base, type Page } from '@playwright/test';
-export const test = base.extend<{ loggedInPage: Page }>({
-  loggedInPage: async ({ page }, use) => {
-    await page.goto('/login');
-    await page.getByLabel('Email').fill(process.env.TEST_EMAIL || 'test@example.com');
-    await page.getByLabel('Password').fill(process.env.TEST_PASSWORD || 'password');
-    await page.getByRole('button', { name: /sign in/i }).click();
-    await page.waitForURL('**/dashboard');
-    await use(page);
-  },
-});
-export { expect } from '@playwright/test';
 ```
 
 For API mocking, form submission, navigation patterns, Page Object Model, and the full `@playwright/test` API, see [API_REFERENCE.md](API_REFERENCE.md).
@@ -365,17 +342,10 @@ jobs:
           # NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
 
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()  # upload even on pass — catches flaky tests that eventually pass
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 7
-
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-results
-          path: test-results/
           retention-days: 7
 ```
 
@@ -482,8 +452,9 @@ The browser cache (`~/.cache/ms-playwright`) lives outside the project — don't
 - **Prefer role selectors** - `getByRole`, `getByLabel`, `getByTestId` over CSS selectors; read the actual component to find real labels, not guesses
 - **`forbidOnly`** - catches accidental `.only` in CI before it skips the entire suite
 - **Test isolation** - each test should be independent; use `beforeEach` for shared setup, not shared state
-- **`storageState` for auth** - use `globalSetup` + `storageState` to log in once and reuse the session; per-test login loops multiply CI time
+- **`storageState` for auth** - use the setup project pattern (`e2e/auth.setup.ts` + `dependencies: ['setup']`) to log in once and reuse auth state across all tests; per-test login multiplies CI time
 - **Artifact patterns** - always configure `screenshot: 'only-on-failure'` and upload `playwright-report/` in CI
 - **`webServer` config** - use `reuseExistingServer: !process.env.CI` so CI always starts fresh but local dev reuses running servers
 - **Environment variables** - read `.env.example` and tell the user which variables must be set as CI secrets
-- **No hardcoded waits** - never use `page.waitForTimeout()`; use `waitForURL`, `waitForSelector`, `expect().toBeVisible()`
+- **No hardcoded waits** - never use `page.waitForTimeout()`; use `waitForURL`, locator assertions, or `expect.poll()` for async conditions (e.g. polling an API status until it returns 200)
+- **`eslint-plugin-playwright`** - add to the project to enforce best practices at lint time (catches `waitForTimeout`, focused tests, etc.) before they reach CI
