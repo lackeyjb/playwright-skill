@@ -104,19 +104,53 @@ function cleanupOldTempFiles() {
 }
 
 /**
- * Wrap code in async IIFE if not already wrapped
+ * Wrap code in async IIFE if not already wrapped.
+ * Adds automatic browser cleanup and execution timeout.
  */
 function wrapCodeIfNeeded(code) {
   // Check if code already has require() and async structure
   const hasRequire = code.includes('require(');
   const hasAsyncIIFE = code.includes('(async () => {') || code.includes('(async()=>{');
 
-  // If it's already a complete script, return as-is
+  // Build the auto-cleanup wrapper that kills any leftover browser processes
+  const autoCleanup = `
+// --- Auto cleanup: close any browser launched by this script ---
+const __launchedBrowsers = [];
+const __origChromiumLaunch = typeof chromium !== 'undefined' ? chromium.launch.bind(chromium) : null;
+if (__origChromiumLaunch) {
+  chromium.launch = async function(...args) {
+    const b = await __origChromiumLaunch(...args);
+    __launchedBrowsers.push(b);
+    return b;
+  };
+}
+async function __cleanupBrowsers() {
+  for (const b of __launchedBrowsers) {
+    try { await b.close(); } catch (e) { /* already closed */ }
+  }
+}
+`;
+
+  // If it's already a complete script, inject cleanup wrappers
   if (hasRequire && hasAsyncIIFE) {
-    return code;
+    // Inject browser tracking after require statements
+    const patchedCode = code.replace(
+      /(const\s*\{[^}]*\}\s*=\s*require\(['"]playwright['"]\);?)/,
+      `$1\n${autoCleanup}`
+    );
+    // Add cleanup on process exit signals
+    if (!patchedCode.includes('__cleanupBrowsers')) {
+      return code; // couldn't patch, return as-is
+    }
+    // Ensure cleanup on SIGINT/SIGTERM and process.exit
+    const signalHandlers = `
+process.on('SIGINT', async () => { await __cleanupBrowsers(); process.exit(130); });
+process.on('SIGTERM', async () => { await __cleanupBrowsers(); process.exit(143); });
+`;
+    return patchedCode.replace('(async () => {', signalHandlers + '(async () => {');
   }
 
-  // If it's just Playwright commands, wrap in full template
+  // If it's just Playwright commands, wrap in full template with cleanup
   if (!hasRequire) {
     return `
 const { chromium, firefox, webkit, devices } = require('playwright');
@@ -124,6 +158,12 @@ const helpers = require('./lib/helpers');
 
 // Extra headers from environment variables (if configured)
 const __extraHeaders = helpers.getExtraHeadersFromEnv();
+
+${autoCleanup}
+
+// Ensure cleanup on signals
+process.on('SIGINT', async () => { await __cleanupBrowsers(); process.exit(130); });
+process.on('SIGTERM', async () => { await __cleanupBrowsers(); process.exit(143); });
 
 /**
  * Utility to merge environment headers into context options.
@@ -142,6 +182,12 @@ function getContextOptionsWithHeaders(options = {}) {
   };
 }
 
+// Execution timeout (default 120s, configurable via PW_TIMEOUT env)
+const __timeout = setTimeout(() => {
+  console.error('⏰ Execution timed out. Cleaning up...');
+  __cleanupBrowsers().finally(() => process.exit(124));
+}, parseInt(process.env.PW_TIMEOUT || '120000', 10));
+
 (async () => {
   try {
     ${code}
@@ -150,7 +196,9 @@ function getContextOptionsWithHeaders(options = {}) {
     if (error.stack) {
       console.error(error.stack);
     }
-    process.exit(1);
+  } finally {
+    clearTimeout(__timeout);
+    await __cleanupBrowsers();
   }
 })();
 `;
@@ -167,7 +215,8 @@ function getContextOptionsWithHeaders(options = {}) {
     if (error.stack) {
       console.error(error.stack);
     }
-    process.exit(1);
+  } finally {
+    await __cleanupBrowsers();
   }
 })();
 `;
