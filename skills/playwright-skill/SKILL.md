@@ -443,6 +443,43 @@ User: "Use 3001"
 [Reports: ✅ Login successful, redirected to /dashboard]
 ```
 
+## Memory Management
+
+Chromium processes consume significant memory (~100-200MB per browser instance). On resource-constrained environments (small VPS, CI runners, containers), unmanaged browser processes can cause OOM kills.
+
+**Automatic cleanup is built into `run.js`:**
+- Browser instances are tracked and automatically closed when the script finishes (even on errors)
+- SIGINT/SIGTERM signals trigger cleanup before exit
+- Execution timeout (default 120s, configurable via `PW_TIMEOUT` env) kills stuck processes
+
+**Best practices for small machines (<4GB RAM):**
+
+1. **Always use `headless: true`** on servers without a display
+2. **Set timeout**: `PW_TIMEOUT=60000 node run.js script.js` (60s)
+3. **Close browsers explicitly** in your script for clarity:
+```javascript
+const browser = await chromium.launch({ headless: true });
+// ... automation ...
+await browser.close(); // explicit, but auto-cleanup also works
+```
+4. **Check for zombie processes** if automation was interrupted:
+```bash
+ps aux | grep chromium | grep -v grep | wc -l
+# If > 0, clean up:
+pkill -f "chromium.*headless"
+```
+5. **Reuse browser context** instead of launching multiple browsers:
+```javascript
+const browser = await chromium.launch({ headless: true });
+for (const url of urls) {
+  const page = await browser.newPage();
+  await page.goto(url);
+  // ... work ...
+  await page.close();
+}
+await browser.close();
+```
+
 ## Notes
 
 - Each automation is custom-written for your specific request
