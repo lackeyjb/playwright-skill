@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22, 24]
+    defaults:
+      run:
+        working-directory: skills/playwright-skill
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: skills/playwright-skill/package-lock.json
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: node tests/smoke.js
+        working-directory: .
+      - run: npx skills-ref@0.1.5 validate .

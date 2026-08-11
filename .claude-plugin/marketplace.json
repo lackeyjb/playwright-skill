@@ -5,15 +5,15 @@
     "email": "github@lackeyjb"
   },
   "metadata": {
-    "description": "Playwright browser automation skill for Claude Code",
-    "version": "1.0.0"
+    "description": "Playwright browser automation skill for coding agents",
+    "version": "5.0.0"
   },
   "plugins": [
     {
       "name": "playwright-skill",
       "source": "./",
-      "description": "Claude Code Skill for general-purpose browser automation with Playwright. Claude autonomously writes and executes custom automation for testing pages, validating UX, and any browser task.",
-      "version": "4.1.0",
+      "description": "Agent Skill for general-purpose browser automation with Playwright. The agent writes and executes custom scripts for testing pages, validating UX, and automating browser tasks.",
+      "version": "5.0.0",
       "author": {
         "name": "lackeyjb"
       },

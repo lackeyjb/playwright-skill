@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
 .npm/
-package-lock.json
 
 # Logs
 *.log
@@ -26,6 +25,10 @@ screenshots/
 *.png
 *.jpg
 *.jpeg
+
+# Keep checked-in documentation/demo images
+!docs/**/*.png
+!assets/**/*.png
 
 # Environment
 .env
