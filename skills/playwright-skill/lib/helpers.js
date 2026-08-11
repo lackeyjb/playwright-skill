@@ -24,13 +24,16 @@ async function launchBrowser(browserType = process.env.PW_BROWSER || 'chromium',
   const browser = { chromium, firefox, webkit }[browserType];
   if (!browser) throw new Error(`Invalid browser type: ${browserType}`);
 
-  const headlessValue = process.env.PW_HEADLESS ?? process.env.HEADLESS;
+  const headlessValue = process.env.PW_HEADLESS || process.env.HEADLESS || 'false';
+  // ponytail: Chromium refuses to start as root without --no-sandbox; only add it there
+  const needsNoSandbox = browserType === 'chromium' && process.getuid?.() === 0;
   const launchOptions = {
-    headless: headlessValue === undefined ? false : headlessValue !== 'false',
-    slowMo: Number(process.env.SLOW_MO || 0),
+    headless: headlessValue !== 'false',
+    slowMo: Number(process.env.SLOW_MO) || 0,
     ...(process.env.PW_CHANNEL && { channel: process.env.PW_CHANNEL }),
     ...(process.env.PW_EXECUTABLE_PATH && { executablePath: process.env.PW_EXECUTABLE_PATH }),
     ...options,
+    ...(needsNoSandbox && { args: ['--no-sandbox', ...(options.args ?? [])] }),
   };
   return browser.launch(launchOptions);
 }
@@ -49,10 +52,13 @@ async function createContext(browser, options = {}) {
 }
 
 async function takeScreenshot(page, name, options = {}) {
-  const { directory, ...screenshotOptions } = options;
-  const outputDirectory = directory || process.env.PW_ARTIFACT_DIR || os.tmpdir();
-  fs.mkdirSync(outputDirectory, { recursive: true });
-  const filename = path.join(outputDirectory, `${name}-${new Date().toISOString().replace(/[:.]/g, '-')}.png`);
+  const { directory, path: customPath, ...screenshotOptions } = options;
+  let filename = customPath;
+  if (!filename) {
+    const outputDirectory = directory || process.env.PW_ARTIFACT_DIR || os.tmpdir();
+    fs.mkdirSync(outputDirectory, { recursive: true });
+    filename = path.join(outputDirectory, `${name}-${new Date().toISOString().replace(/[:.]/g, '-')}.png`);
+  }
   await page.screenshot({ path: filename, fullPage: screenshotOptions.fullPage !== false, ...screenshotOptions });
   console.log(`Screenshot saved: ${filename}`);
   return filename;
@@ -71,7 +77,7 @@ async function handleCookieBanner(page, timeout = 3000) {
   ];
   for (const selector of selectors) {
     try {
-      await page.locator(selector).click({ timeout: timeout / selectors.length });
+      await page.locator(selector).filter({ visible: true }).first().click({ timeout: timeout / selectors.length });
       console.log('Cookie banner dismissed');
       return true;
     } catch {
@@ -87,7 +93,7 @@ async function detectDevServers(customPorts = []) {
   await Promise.all(ports.map(async port => {
     await new Promise(resolve => {
       const request = http.request({ hostname: 'localhost', port, path: '/', method: 'HEAD', timeout: 500 }, response => {
-        if (response.statusCode < 500) servers.push(`http://localhost:${port}`);
+        if (response.statusCode < 500) servers.push(port);
         response.resume();
         resolve();
       });
@@ -96,7 +102,7 @@ async function detectDevServers(customPorts = []) {
       request.end();
     });
   }));
-  return servers.sort();
+  return servers.sort((a, b) => a - b).map(port => `http://localhost:${port}`);
 }
 
 module.exports = {

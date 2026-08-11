@@ -2,6 +2,11 @@
 <html lang="en">
   <head><meta charset="utf-8"><title>Login fixture</title></head>
   <body>
+    <div id="cookie-banner">
+      <p>We use cookies.</p>
+      <button type="button" id="accept-all">Accept</button>
+      <button type="button" id="accept-necessary">Accept &amp; continue</button>
+    </div>
     <main>
       <h1>Sign in</h1>
       <form id="login-form">
@@ -14,6 +19,9 @@
       <p id="error" hidden>Enter an email and password.</p>
     </main>
     <script>
+      document.querySelectorAll('#cookie-banner button').forEach(button => {
+        button.addEventListener('click', () => document.getElementById('cookie-banner').remove());
+      });
       document.querySelector('#login-form').addEventListener('submit', (event) => {
         event.preventDefault();
         if (!event.target.reportValidity()) return;

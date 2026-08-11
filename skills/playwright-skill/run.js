@@ -35,15 +35,32 @@ function saveScript(file) {
 
 function run(args) {
   const child = spawn(process.execPath, args, {
-    cwd: skillDir,
+    // ponytail: keep the caller's cwd so relative paths in scripts and in
+    // PW_ARTIFACT_DIR resolve against the user's project, not the skill install.
+    cwd: process.cwd(),
     env: { ...process.env, NODE_PATH: nodeModules, PW_SKILL_DIR: skillDir },
     stdio: 'inherit',
   });
-  child.on('exit', code => process.exit(code ?? 1));
+  const handlers = new Map();
+  child.on('exit', (code, signal) => {
+    if (!signal) process.exit(code ?? 1);
+    // Re-raise so callers and shells see an interrupt rather than a plain failure.
+    for (const [name, handler] of handlers) process.off(name, handler);
+    process.kill(process.pid, signal);
+  });
   child.on('error', error => {
     console.error(`Failed to start Node.js: ${error.message}`);
     process.exit(1);
   });
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    const handler = () => {
+      child.kill(signal);
+      // ponytail: child traps or ignores the signal? escalate so the parent cannot hang
+      setTimeout(() => child.kill('SIGKILL'), 2000).unref();
+    };
+    handlers.set(signal, handler);
+    process.on(signal, handler);
+  }
 }
 
 ensurePlaywright();
@@ -55,8 +72,12 @@ if (args[0] === '-e' || args[0] === '--eval') {
     console.error('Usage: node run.js -e "await page.goto(\'https://example.com\')"');
     process.exit(1);
   }
-  const prefix = "const { chromium, firefox, webkit, devices } = require('playwright');\nconst helpers = require('./lib/helpers');\n";
-  run(['-e', `${prefix}\n(async () => {\n  try {\n    ${source}\n  } catch (error) {\n    console.error(error.stack || error.message);\n    process.exitCode = 1;\n  }\n})();`]);
+  const helpersPath = JSON.stringify(path.join(skillDir, 'lib/helpers'));
+  const prefix = `const { chromium, firefox, webkit, devices } = require('playwright');\nconst helpers = require(${helpersPath});\n`;
+  // ponytail: exit once the snippet settles so a snippet that leaves the browser open
+  // cannot hang; the empty writes flush queued output first (pipe writes are async).
+  const exit = "async () => { for (const s of [process.stdout, process.stderr]) await new Promise(r => s.write('', r)); process.exit(process.exitCode ?? 0); }";
+  run(['-e', `${prefix}\n(async () => {\n  try {\n    ${source}\n  } catch (error) {\n    console.error(error.stack || error.message);\n    process.exitCode = 1;\n  }\n})().finally(${exit});`]);
 } else if (args[0]) {
   const file = path.resolve(args[0]);
   if (!fs.existsSync(file)) {

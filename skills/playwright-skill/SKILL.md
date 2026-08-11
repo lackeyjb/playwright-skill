@@ -14,12 +14,31 @@ allowed-tools: Bash(node:*) Bash(npm:*) Read Write
 Write and execute focused Playwright scripts for the user's request. Prefer the
 skill's executor and helpers, but use the full Playwright API when needed.
 
+## Path resolution
+
+This skill can be installed in several locations, so resolve its directory
+first. Set `SKILL_DIR` to the directory containing this SKILL.md file, then run
+the commands below as written:
+
+```bash
+export SKILL_DIR=<absolute path of the directory containing this SKILL.md>
+```
+
+If shell state does not persist between commands, substitute the literal path
+for `$SKILL_DIR` in each command instead.
+
+Common installation paths:
+
+- Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
+- Manual global: `~/.claude/skills/playwright-skill`
+- Project-specific: `<project>/.claude/skills/playwright-skill`
+
 ## Workflow
 
 1. For localhost work, detect running servers before writing a URL:
 
    ```bash
-   node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
+   node -e "require('$SKILL_DIR/lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
    ```
 
    Use the only result automatically. Ask which URL to use when there are
@@ -29,20 +48,20 @@ skill's executor and helpers, but use the full Playwright API when needed.
 3. Use a visible browser by default. Use `headless: true` only when requested
    or when the environment has no display.
 4. Put the target URL in a constant or environment variable.
-5. Run scripts from this skill directory with `node run.js <script.js>`.
+5. Run scripts with `node "$SKILL_DIR/run.js" <script.js>`.
 6. Report actions, failures, and artifact paths. Do not claim success without
    checking the resulting page.
 
 ## Setup
 
-Run once from this directory:
+Run once:
 
 ```bash
-npm run setup
+cd "$SKILL_DIR" && npm run setup
 ```
 
-This installs Playwright and Chromium. Use `npm run install-all-browsers` when
-Firefox or WebKit is required.
+This installs Playwright and Chromium. Use `cd "$SKILL_DIR" && npm run
+install-all-browsers` when Firefox or WebKit is required.
 
 ## Minimal example
 
@@ -67,14 +86,17 @@ const targetUrl = process.env.TARGET_URL || 'http://localhost:3000';
 Run it:
 
 ```bash
-node run.js /tmp/playwright-test-page.js
+node "$SKILL_DIR/run.js" /tmp/playwright-test-page.js
 ```
 
 For short one-off tasks, use inline execution:
 
 ```bash
-node run.js -e "const page = await (await chromium.launch({headless: false})).newPage(); await page.goto('https://example.com'); console.log(await page.title())"
+node "$SKILL_DIR/run.js" -e "const browser = await chromium.launch({headless: false}); try { const page = await browser.newPage(); await page.goto('https://example.com'); console.log(await page.title()); } finally { await browser.close(); }"
 ```
+
+The `-e` process exits as soon as the snippet settles, so close the browser
+inside the snippet.
 
 ## Current Playwright patterns
 
@@ -129,8 +151,8 @@ await page.getByRole('heading', { name: /dashboard/i }).waitFor();
 ### Save scripts and artifacts
 
 ```bash
-PW_SCRIPT_DIR=./playwright-tests node run.js /tmp/playwright-test-login.js
-PW_ARTIFACT_DIR=./playwright-artifacts node run.js /tmp/playwright-test-page.js
+PW_SCRIPT_DIR=./playwright-tests node "$SKILL_DIR/run.js" /tmp/playwright-test-login.js
+PW_ARTIFACT_DIR=./playwright-artifacts node "$SKILL_DIR/run.js" /tmp/playwright-test-page.js
 ```
 
 `PW_SCRIPT_DIR` copies file-based scripts before execution and adds a timestamp
