@@ -1,7 +1,61 @@
 // playwright-helpers.js
 // Reusable utility functions for Playwright automation
 
+const os = require('os');
+const path = require('path');
 const { chromium, firefox, webkit } = require('playwright');
+
+/**
+ * Is this path pinned to a location, or does it only look absolute?
+ *
+ * path.isAbsolute('/tmp/x') is true on Windows too, but such a path is
+ * *drive-relative*: it resolves against whichever drive the process happens to
+ * be on, landing in C:\tmp. Only a drive letter or a UNC root pins a Windows
+ * path down.
+ *
+ * @param {string} p
+ * @returns {boolean}
+ */
+function isPinnedPath(p) {
+  if (process.platform !== 'win32') return path.isAbsolute(p);
+  return /^[A-Za-z]:[\\/]/.test(p) || /^[\\/]{2}[^\\/]/.test(p);
+}
+
+/**
+ * Build a portable path for a generated artifact (screenshot, trace, download…).
+ *
+ * Use this instead of hardcoding '/tmp/name.png'. os.tmpdir() is the per-user
+ * temp directory on every platform Node supports; '/tmp' is not one on Windows.
+ *
+ * Pinned paths (POSIX absolute, or drive-qualified / UNC on Windows) are passed
+ * through unchanged, so callers can opt out. A POSIX-style '/tmp/shot.png' on
+ * Windows is NOT passed through — that is the exact bug this function exists to
+ * avoid — its file name is placed in the temp directory instead. Pass a
+ * drive-qualified path if you really do want a specific location.
+ *
+ * The result is always absolute, including when `dir` is relative. `name` is
+ * not sanitised: a caller that passes '../x.png' gets a path outside `dir`, on
+ * purpose, because that is the caller's decision to make.
+ *
+ * @param {string} name - File name, e.g. 'screenshot.png'
+ * @param {string} [dir] - Override directory (defaults to os.tmpdir())
+ * @returns {string} Absolute path
+ */
+function artifactPath(name, dir) {
+  if (typeof name !== 'string' || name.trim() === '') {
+    throw new TypeError('artifactPath: name must be a non-empty string');
+  }
+  if (isPinnedPath(name)) return name;
+  // Reached on Windows for '/tmp/shot.png' and 'C:shot.png': both look located
+  // but are relative to the current drive or its current directory, so only the
+  // file name survives. Ordinary relative names like 'run-1/shot.png' keep
+  // their structure.
+  const driveRelative = path.isAbsolute(name) || /^[A-Za-z]:/.test(name);
+  const relative = driveRelative ? path.basename(name) : name;
+  // resolve(), not join(): a relative `dir` would otherwise yield a relative
+  // path, and Playwright would resolve it against the cwd — the bug being fixed.
+  return path.resolve(dir || os.tmpdir(), relative);
+}
 
 /**
  * Parse extra HTTP headers from environment variables.
@@ -178,22 +232,37 @@ async function extractTexts(page, selector) {
 
 /**
  * Take screenshot with timestamp
+ *
+ * The path is made absolute on purpose. Playwright resolves a relative `path`
+ * against process.cwd(), and run.js does process.chdir(__dirname) — so a bare
+ * file name used to land inside the installed skill directory rather than in a
+ * temp directory. Artifacts now go to os.tmpdir() unless `options.dir` says
+ * otherwise. The `:` characters in the ISO timestamp are already stripped,
+ * which keeps the name legal on Windows.
+ *
+ * `path` and `fullPage` are computed after the caller's options are spread in,
+ * so the value logged and returned is always the value Playwright received.
+ * An explicit `options.path` is honoured, but goes through artifactPath() too —
+ * a relative one would otherwise land wherever the cwd happens to be.
+ *
  * @param {Object} page - Playwright page
- * @param {string} name - Screenshot name
- * @param {Object} options - Screenshot options
+ * @param {string} name - Screenshot name (no extension)
+ * @param {Object} options - Screenshot options; `dir` overrides the directory
+ * @returns {Promise<string>} Absolute path of the saved screenshot
  */
 async function takeScreenshot(page, name, options = {}) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename = `${name}-${timestamp}.png`;
-  
+  const { dir, path: requestedPath, ...screenshotOptions } = options;
+  const filePath = artifactPath(requestedPath || `${name}-${timestamp}.png`, dir);
+
   await page.screenshot({
-    path: filename,
-    fullPage: options.fullPage !== false,
-    ...options
+    ...screenshotOptions,
+    path: filePath,
+    fullPage: options.fullPage !== false
   });
-  
-  console.log(`Screenshot saved: ${filename}`);
-  return filename;
+
+  console.log(`Screenshot saved: ${filePath}`);
+  return filePath;
 }
 
 /**
@@ -423,6 +492,7 @@ async function detectDevServers(customPorts = []) {
 }
 
 module.exports = {
+  artifactPath,
   launchBrowser,
   createPage,
   waitForPageReady,

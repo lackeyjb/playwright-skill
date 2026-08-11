@@ -5,6 +5,7 @@
   "author": "lackeyjb",
   "main": "run.js",
   "scripts": {
+    "test": "node test/artifact-paths.test.js",
     "setup": "npm install && npx playwright install chromium",
     "install-all-browsers": "npx playwright install chromium firefox webkit"
   },

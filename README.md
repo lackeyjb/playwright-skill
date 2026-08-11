@@ -97,6 +97,35 @@ npm run setup
 rm -rf /tmp/playwright-skill-temp
 ```
 
+<details>
+<summary><strong>Windows (PowerShell) equivalents</strong></summary>
+
+The commands above are POSIX shell. On Windows, `/tmp` is not the temp directory —
+it resolves to `C:\tmp`, the root of the current drive. Use `$env:TEMP` instead:
+
+```powershell
+# Clone to a temporary location
+$tmp = Join-Path $env:TEMP 'playwright-skill-temp'
+git clone https://github.com/lackeyjb/playwright-skill.git $tmp
+
+# Global: copy the skill folder to your global skills directory
+New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills" | Out-Null
+Copy-Item -Recurse -Force "$tmp\skills\playwright-skill" "$HOME\.claude\skills\"
+
+# ...or project-specific: copy it into the current project
+New-Item -ItemType Directory -Force -Path ".claude\skills" | Out-Null
+Copy-Item -Recurse -Force "$tmp\skills\playwright-skill" ".claude\skills\"
+
+# Run setup from wherever you installed it
+cd "$HOME\.claude\skills\playwright-skill"
+npm run setup
+
+# Clean up
+Remove-Item -Recurse -Force $tmp
+```
+
+</details>
+
 **Why this structure?** The plugin format requires the `skills/` directory for organizing multiple skills within a plugin. When installing as a standalone skill, you only need the inner `skills/playwright-skill/` folder contents.
 
 ---
@@ -171,7 +200,7 @@ Default settings:
 - **Headless:** `false` (browser visible unless explicitly requested otherwise)
 - **Slow Motion:** `100ms` for visibility
 - **Timeout:** `30s`
-- **Screenshots:** Saved to `/tmp/`
+- **Screenshots:** Saved to the OS temp directory (`os.tmpdir()`), not a literal `/tmp`
 
 ## Project Structure
 

@@ -122,6 +122,10 @@ function wrapCodeIfNeeded(code) {
 const { chromium, firefox, webkit, devices } = require('playwright');
 const helpers = require('./lib/helpers');
 
+// Portable path for generated artifacts. Use artifactPath('shot.png') instead
+// of '/tmp/shot.png' — on Windows a literal '/tmp' resolves to C:\\tmp.
+const artifactPath = helpers.artifactPath;
+
 // Extra headers from environment variables (if configured)
 const __extraHeaders = helpers.getExtraHeadersFromEnv();
 
@@ -197,7 +201,17 @@ async function main() {
   const rawCode = getCodeToExecute();
   const code = wrapCodeIfNeeded(rawCode);
 
-  // Create temporary file for execution
+  // Create temporary file for execution.
+  //
+  // This one deliberately stays in __dirname rather than os.tmpdir(). Node
+  // resolves require() from the requiring file's own directory, not from
+  // process.cwd() — so a temp file written to os.tmpdir() fails with
+  // "Cannot find module 'playwright'" before it can run, and the injected
+  // require('./lib/helpers') breaks the same way. process.chdir() above does
+  // not help: cwd plays no part in module resolution.
+  //
+  // Artifacts the script *produces* (screenshots, traces) are a different
+  // matter and do belong in os.tmpdir() — see helpers.artifactPath().
   const tempFile = path.join(__dirname, `.temp-execution-${Date.now()}.js`);
 
   try {

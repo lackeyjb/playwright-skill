@@ -1,6 +1,6 @@
 ---
 name: playwright-skill
-description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
+description: Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to a portable temp directory. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing.
 ---
 
 **IMPORTANT - Path Resolution:**
@@ -11,6 +11,18 @@ Common installation paths:
 - Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
 - Manual global: `~/.claude/skills/playwright-skill`
 - Project-specific: `<project>/.claude/skills/playwright-skill`
+
+**IMPORTANT - Artifact Paths:**
+Test scripts and screenshots go in the OS temp directory, written below as `$TMP_DIR`.
+Do not hardcode `/tmp`: on Windows that resolves to `C:\tmp` — the root of the current
+drive, which is outside the directory Windows cleans up. Resolve it once per session:
+
+```bash
+node -p "require('os').tmpdir()"
+```
+
+Inside automation code, use `artifactPath('name.png')` (injected by `run.js`) or
+`require('path').join(require('os').tmpdir(), 'name.png')` in standalone scripts.
 
 # Playwright Browser Automation
 
@@ -28,7 +40,7 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
    - If **multiple servers found**: Ask user which one to test
    - If **no servers found**: Ask for URL or offer to help start dev server
 
-2. **Write scripts to /tmp** - NEVER write test files to skill directory; always use `/tmp/playwright-test-*.js`
+2. **Write scripts to the temp directory** - NEVER write test files to the skill directory; always use `$TMP_DIR/playwright-test-*.js`
 
 3. **Use visible browser by default** - Always use `headless: false` unless user specifically requests headless mode
 
@@ -38,10 +50,10 @@ General-purpose browser automation skill. I'll write custom Playwright code for 
 
 1. You describe what you want to test/automate
 2. I auto-detect running dev servers (or ask for URL if testing external site)
-3. I write custom Playwright code in `/tmp/playwright-test-*.js` (won't clutter your project)
-4. I execute it via: `cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js`
+3. I write custom Playwright code in `$TMP_DIR/playwright-test-*.js` (won't clutter your project)
+4. I execute it via: `cd $SKILL_DIR && node run.js $TMP_DIR/playwright-test-*.js`
 5. Results displayed in real-time, browser window visible for debugging
-6. Test files auto-cleaned from /tmp by your OS
+6. Test files land in the OS temp directory; cleanup policy is the OS's (macOS and most Linux distros sweep it periodically, Windows does not — delete them yourself if it matters)
 
 ## Setup (First Time)
 
@@ -60,11 +72,13 @@ This installs Playwright and Chromium browser. Only needed once.
 cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
 ```
 
-**Step 2: Write test script to /tmp with URL parameter**
+**Step 2: Write test script to $TMP_DIR with URL parameter**
 
 ```javascript
-// /tmp/playwright-test-page.js
+// $TMP_DIR/playwright-test-page.js
 const { chromium } = require('playwright');
+const { join } = require('path');
+const { tmpdir } = require('os');
 
 // Parameterized URL (detected or user-provided)
 const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
@@ -76,8 +90,9 @@ const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
   await page.goto(TARGET_URL);
   console.log('Page loaded:', await page.title());
 
-  await page.screenshot({ path: '/tmp/screenshot.png', fullPage: true });
-  console.log('📸 Screenshot saved to /tmp/screenshot.png');
+  const shot = join(tmpdir(), 'screenshot.png');
+  await page.screenshot({ path: shot, fullPage: true });
+  console.log('📸 Screenshot saved to', shot);
 
   await browser.close();
 })();
@@ -86,7 +101,7 @@ const TARGET_URL = 'http://localhost:3001'; // <-- Auto-detected or from user
 **Step 3: Execute from skill directory**
 
 ```bash
-cd $SKILL_DIR && node run.js /tmp/playwright-test-page.js
+cd $SKILL_DIR && node run.js $TMP_DIR/playwright-test-page.js
 ```
 
 ## Common Patterns
@@ -94,8 +109,10 @@ cd $SKILL_DIR && node run.js /tmp/playwright-test-page.js
 ### Test a Page (Multiple Viewports)
 
 ```javascript
-// /tmp/playwright-test-responsive.js
+// $TMP_DIR/playwright-test-responsive.js
 const { chromium } = require('playwright');
+const { join } = require('path');
+const { tmpdir } = require('os');
 
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
@@ -107,11 +124,11 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(TARGET_URL);
   console.log('Desktop - Title:', await page.title());
-  await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), 'desktop.png'), fullPage: true });
 
   // Mobile test
   await page.setViewportSize({ width: 375, height: 667 });
-  await page.screenshot({ path: '/tmp/mobile.png', fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), 'mobile.png'), fullPage: true });
 
   await browser.close();
 })();
@@ -120,7 +137,7 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 ### Test Login Flow
 
 ```javascript
-// /tmp/playwright-test-login.js
+// $TMP_DIR/playwright-test-login.js
 const { chromium } = require('playwright');
 
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
@@ -146,7 +163,7 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 ### Fill and Submit Form
 
 ```javascript
-// /tmp/playwright-test-form.js
+// $TMP_DIR/playwright-test-form.js
 const { chromium } = require('playwright');
 
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
@@ -209,6 +226,8 @@ const { chromium } = require('playwright');
 
 ```javascript
 const { chromium } = require('playwright');
+const { join } = require('path');
+const { tmpdir } = require('os');
 
 (async () => {
   const browser = await chromium.launch({ headless: false });
@@ -220,12 +239,13 @@ const { chromium } = require('playwright');
       timeout: 10000,
     });
 
+    const shot = join(tmpdir(), 'screenshot.png');
     await page.screenshot({
-      path: '/tmp/screenshot.png',
+      path: shot,
       fullPage: true,
     });
 
-    console.log('📸 Screenshot saved to /tmp/screenshot.png');
+    console.log('📸 Screenshot saved to', shot);
   } catch (error) {
     console.error('❌ Error:', error.message);
   } finally {
@@ -237,8 +257,10 @@ const { chromium } = require('playwright');
 ### Test Responsive Design
 
 ```javascript
-// /tmp/playwright-test-responsive-full.js
+// $TMP_DIR/playwright-test-responsive-full.js
 const { chromium } = require('playwright');
+const { join } = require('path');
+const { tmpdir } = require('os');
 
 const TARGET_URL = 'http://localhost:3001'; // Auto-detected
 
@@ -266,7 +288,7 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
     await page.waitForTimeout(1000);
 
     await page.screenshot({
-      path: `/tmp/${viewport.name.toLowerCase()}.png`,
+      path: join(tmpdir(), `${viewport.name.toLowerCase()}.png`),
       fullPage: true,
     });
   }
@@ -286,7 +308,7 @@ cd $SKILL_DIR && node run.js "
 const browser = await chromium.launch({ headless: false });
 const page = await browser.newPage();
 await page.goto('http://localhost:3001');
-await page.screenshot({ path: '/tmp/quick-screenshot.png', fullPage: true });
+await page.screenshot({ path: artifactPath('quick-screenshot.png'), fullPage: true });
 console.log('Screenshot saved');
 await browser.close();
 "
@@ -314,8 +336,11 @@ await helpers.safeClick(page, 'button.submit', { retries: 3 });
 // Safe type with clear
 await helpers.safeType(page, '#username', 'testuser');
 
-// Take timestamped screenshot
-await helpers.takeScreenshot(page, 'test-result');
+// Take timestamped screenshot (returns the absolute path it wrote)
+const shotPath = await helpers.takeScreenshot(page, 'test-result');
+
+// Build a portable artifact path yourself (os.tmpdir() based)
+const tracePath = helpers.artifactPath('trace.zip');
 
 // Handle cookie banners
 await helpers.handleCookieBanner(page);
@@ -340,14 +365,14 @@ Configure custom headers for all HTTP requests via environment variables. Useful
 
 ```bash
 PW_HEADER_NAME=X-Automated-By PW_HEADER_VALUE=playwright-skill \
-  cd $SKILL_DIR && node run.js /tmp/my-script.js
+  cd $SKILL_DIR && node run.js $TMP_DIR/my-script.js
 ```
 
 **Multiple headers (JSON format):**
 
 ```bash
 PW_EXTRA_HEADERS='{"X-Automated-By":"playwright-skill","X-Debug":"true"}' \
-  cd $SKILL_DIR && node run.js /tmp/my-script.js
+  cd $SKILL_DIR && node run.js $TMP_DIR/my-script.js
 ```
 
 ### How It Works
@@ -385,7 +410,7 @@ For comprehensive Playwright API documentation, see [API_REFERENCE.md](API_REFER
 
 - **CRITICAL: Detect servers FIRST** - Always run `detectDevServers()` before writing test code for localhost testing
 - **Custom headers** - Use `PW_HEADER_NAME`/`PW_HEADER_VALUE` env vars to identify automated traffic to your backend
-- **Use /tmp for test files** - Write to `/tmp/playwright-test-*.js`, never to skill directory or user's project
+- **Use the OS temp dir for test files** - Write to `$TMP_DIR/playwright-test-*.js`, never to the skill directory or user's project. `$TMP_DIR` is `node -p "require('os').tmpdir()"`, not a literal `/tmp`
 - **Parameterize URLs** - Put detected/provided URL in a `TARGET_URL` constant at the top of every script
 - **DEFAULT: Visible browser** - Always use `headless: false` unless user explicitly asks for headless mode
 - **Headless mode** - Only use `headless: true` when user specifically requests "headless" or "background" execution
@@ -421,9 +446,9 @@ Claude: I'll test the marketing page across multiple viewports. Let me first det
 [Output: Found server on port 3001]
 I found your dev server running on http://localhost:3001
 
-[Writes custom automation script to /tmp/playwright-test-marketing.js with URL parameterized]
-[Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-marketing.js]
-[Shows results with screenshots from /tmp/]
+[Writes custom automation script to $TMP_DIR/playwright-test-marketing.js with URL parameterized]
+[Runs: cd $SKILL_DIR && node run.js $TMP_DIR/playwright-test-marketing.js]
+[Shows results with screenshots from $TMP_DIR]
 ```
 
 ```
@@ -438,8 +463,8 @@ I found 2 dev servers. Which one should I test?
 
 User: "Use 3001"
 
-[Writes login automation to /tmp/playwright-test-login.js]
-[Runs: cd $SKILL_DIR && node run.js /tmp/playwright-test-login.js]
+[Writes login automation to $TMP_DIR/playwright-test-login.js]
+[Runs: cd $SKILL_DIR && node run.js $TMP_DIR/playwright-test-login.js]
 [Reports: ✅ Login successful, redirected to /dashboard]
 ```
 
@@ -448,6 +473,6 @@ User: "Use 3001"
 - Each automation is custom-written for your specific request
 - Not limited to pre-built scripts - any browser task possible
 - Auto-detects running dev servers to eliminate hardcoded URLs
-- Test scripts written to `/tmp` for automatic cleanup (no clutter)
+- Test scripts written to the OS temp directory, not the project (no clutter)
 - Code executes reliably with proper module resolution via `run.js`
 - Progressive disclosure - API_REFERENCE.md loaded only when advanced features needed

@@ -1,7 +1,7 @@
 {
   "name": "playwright-skill",
   "version": "4.1.0",
-  "description": "Claude Code Skill for general-purpose browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp, and autonomously handles any browser automation task.",
+  "description": "Claude Code Skill for general-purpose browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to a portable temp directory, and autonomously handles any browser automation task.",
   "author": {
     "name": "lackeyjb"
   },
