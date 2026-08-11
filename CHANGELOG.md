@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.0.0] - Unreleased
+## [5.0.0] - 2026-08-11
 
 ### Changed
 
@@ -11,6 +11,7 @@
 - Reduced helpers to focused browser setup, server detection, headers, cookie banners, and screenshots.
 - Modernized examples around accessible locators and web-first waiting.
 - Added CI, fixtures, unit tests, contribution templates, and Dependabot configuration.
+- Updated GitHub Actions checkout and setup-node to v7.
 
 ### Breaking changes
 
