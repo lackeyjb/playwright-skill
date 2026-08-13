@@ -126,19 +126,21 @@ await page.getByRole('heading', { name: 'Dashboard' }).waitFor();
 ### Responsive checks
 
 ```javascript
-const os = require('node:os');
-const path = require('node:path');
+{
+  const os = require('node:os');
+  const path = require('node:path');
 
-const artifactDir = process.env.PW_ARTIFACT_DIR || os.tmpdir();
-const viewports = [
-  { name: 'desktop', width: 1440, height: 900 },
-  { name: 'mobile', width: 390, height: 844 },
-];
+  const artifactDir = process.env.PW_ARTIFACT_DIR || os.tmpdir();
+  const viewports = [
+    { name: 'desktop', width: 1440, height: 900 },
+    { name: 'mobile', width: 390, height: 844 },
+  ];
 
-for (const viewport of viewports) {
-  await page.setViewportSize(viewport);
-  await page.goto(targetUrl);
-  await page.screenshot({ path: path.join(artifactDir, `${viewport.name}.png`), fullPage: true });
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto(targetUrl);
+    await page.screenshot({ path: path.join(artifactDir, `${viewport.name}.png`), fullPage: true });
+  }
 }
 ```
 
