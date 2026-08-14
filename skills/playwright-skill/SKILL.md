@@ -22,10 +22,11 @@ the commands below as written:
 
 ```bash
 export SKILL_DIR=<absolute path of the directory containing this SKILL.md>
+export TMP_DIR="$(node -p 'require("node:os").tmpdir()')"
 ```
 
-If shell state does not persist between commands, substitute the literal path
-for `$SKILL_DIR` in each command instead.
+If shell state does not persist between commands, substitute the literal paths
+for `$SKILL_DIR` and `$TMP_DIR` in each command instead.
 
 Common installation paths:
 
@@ -43,8 +44,8 @@ Common installation paths:
 
    Use the only result automatically. Ask which URL to use when there are
    multiple results. Ask for a URL or offer to start a server when none exist.
-2. Write reusable scripts to `/tmp/playwright-test-*.js` unless the user asks
-   to save them in the project. Use `PW_SCRIPT_DIR` to preserve scripts.
+2. Write reusable scripts to `$TMP_DIR/playwright-test-*.js` unless the user
+   asks to save them in the project. Use `PW_SCRIPT_DIR` to preserve scripts.
 3. Use a visible browser by default. Use `headless: true` only when requested
    or when the environment has no display.
 4. Put the target URL in a constant or environment variable.
@@ -66,9 +67,12 @@ install-all-browsers` when Firefox or WebKit is required.
 ## Minimal example
 
 ```javascript
+const os = require('node:os');
+const path = require('node:path');
 const { chromium } = require('playwright');
 
 const targetUrl = process.env.TARGET_URL || 'http://localhost:3000';
+const artifactDir = process.env.PW_ARTIFACT_DIR || os.tmpdir();
 
 (async () => {
   const browser = await chromium.launch({ headless: false });
@@ -76,7 +80,7 @@ const targetUrl = process.env.TARGET_URL || 'http://localhost:3000';
     const page = await browser.newPage();
     await page.goto(targetUrl);
     console.log('Page loaded:', await page.title());
-    await page.screenshot({ path: '/tmp/page.png', fullPage: true });
+    await page.screenshot({ path: path.join(artifactDir, 'page.png'), fullPage: true });
   } finally {
     await browser.close();
   }
@@ -86,7 +90,7 @@ const targetUrl = process.env.TARGET_URL || 'http://localhost:3000';
 Run it:
 
 ```bash
-node "$SKILL_DIR/run.js" /tmp/playwright-test-page.js
+node "$SKILL_DIR/run.js" "$TMP_DIR/playwright-test-page.js"
 ```
 
 For short one-off tasks, use inline execution:
@@ -122,15 +126,21 @@ await page.getByRole('heading', { name: 'Dashboard' }).waitFor();
 ### Responsive checks
 
 ```javascript
-const viewports = [
-  { name: 'desktop', width: 1440, height: 900 },
-  { name: 'mobile', width: 390, height: 844 },
-];
+{
+  const os = require('node:os');
+  const path = require('node:path');
 
-for (const viewport of viewports) {
-  await page.setViewportSize(viewport);
-  await page.goto(targetUrl);
-  await page.screenshot({ path: `/tmp/${viewport.name}.png`, fullPage: true });
+  const artifactDir = process.env.PW_ARTIFACT_DIR || os.tmpdir();
+  const viewports = [
+    { name: 'desktop', width: 1440, height: 900 },
+    { name: 'mobile', width: 390, height: 844 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto(targetUrl);
+    await page.screenshot({ path: path.join(artifactDir, `${viewport.name}.png`), fullPage: true });
+  }
 }
 ```
 
@@ -151,8 +161,8 @@ await page.getByRole('heading', { name: /dashboard/i }).waitFor();
 ### Save scripts and artifacts
 
 ```bash
-PW_SCRIPT_DIR=./playwright-tests node "$SKILL_DIR/run.js" /tmp/playwright-test-login.js
-PW_ARTIFACT_DIR=./playwright-artifacts node "$SKILL_DIR/run.js" /tmp/playwright-test-page.js
+PW_SCRIPT_DIR=./playwright-tests node "$SKILL_DIR/run.js" "$TMP_DIR/playwright-test-login.js"
+PW_ARTIFACT_DIR=./playwright-artifacts node "$SKILL_DIR/run.js" "$TMP_DIR/playwright-test-page.js"
 ```
 
 `PW_SCRIPT_DIR` copies file-based scripts before execution and adds a timestamp
