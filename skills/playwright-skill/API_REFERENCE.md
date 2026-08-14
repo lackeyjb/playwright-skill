@@ -187,9 +187,12 @@ await row.locator('button.edit').click();
 await page.getByLabel('Email').fill('user@example.com');
 await page.getByPlaceholder('Enter your name').fill('John Doe');
 
-// Clear and type
+// Clear and refill
 await page.locator('#username').clear();
-await page.locator('#username').type('newuser', { delay: 100 });
+await page.locator('#username').fill('newuser');
+
+// Only when the page has special per-key handling (autocomplete, masking)
+await page.locator('#username').pressSequentially('newuser', { delay: 100 });
 
 // Checkbox
 await page.getByLabel('I agree').check();
@@ -199,16 +202,16 @@ await page.getByLabel('Subscribe').uncheck();
 await page.getByLabel('Option 2').check();
 
 // Select dropdown
-await page.selectOption('select#country', 'usa');
-await page.selectOption('select#country', { label: 'United States' });
-await page.selectOption('select#country', { index: 2 });
+await page.locator('select#country').selectOption('usa');
+await page.locator('select#country').selectOption({ label: 'United States' });
+await page.locator('select#country').selectOption({ index: 2 });
 
 // Multi-select
-await page.selectOption('select#colors', ['red', 'blue', 'green']);
+await page.locator('select#colors').selectOption(['red', 'blue', 'green']);
 
 // File upload
-await page.setInputFiles('input[type="file"]', 'path/to/file.pdf');
-await page.setInputFiles('input[type="file"]', [
+await page.locator('input[type="file"]').setInputFiles('path/to/file.pdf');
+await page.locator('input[type="file"]').setInputFiles([
   'file1.pdf',
   'file2.pdf'
 ]);
@@ -218,13 +221,13 @@ await page.setInputFiles('input[type="file"]', [
 
 ```javascript
 // Click variations
-await page.click('button');                          // Left click
-await page.click('button', { button: 'right' });    // Right click
-await page.dblclick('button');                       // Double click
-await page.click('button', { position: { x: 10, y: 10 } });  // Click at position
+await page.getByRole('button').click();                          // Left click
+await page.getByRole('button').click({ button: 'right' });       // Right click
+await page.getByRole('button').dblclick();                       // Double click
+await page.getByRole('button').click({ position: { x: 10, y: 10 } });  // Click at position
 
 // Hover
-await page.hover('.menu-item');
+await page.locator('.menu-item').hover();
 
 // Drag and drop
 await page.dragAndDrop('#source', '#target');
@@ -282,7 +285,7 @@ await page.waitForFunction(
 
 // Wait for response
 const responsePromise = page.waitForResponse('**/api/users');
-await page.click('button#load-users');
+await page.locator('button#load-users').click();
 const response = await responsePromise;
 
 // Wait for request
@@ -527,9 +530,9 @@ const testData = [
 testData.forEach(({ username, password, expected }) => {
   test(`login with ${username}`, async ({ page }) => {
     await page.goto('/login');
-    await page.fill('#username', username);
-    await page.fill('#password', password);
-    await page.click('button[type="submit"]');
+    await page.locator('#username').fill(username);
+    await page.locator('#password').fill(password);
+    await page.getByRole('button', { name: 'Submit' }).click();
     await expect(page.locator('.message')).toHaveText(expected);
   });
 });
@@ -585,7 +588,7 @@ jobs:
 ```javascript
 const [popup] = await Promise.all([
   page.waitForEvent('popup'),
-  page.click('button.open-popup')
+  page.locator('button.open-popup').click()
 ]);
 await popup.waitForLoadState();
 ```
@@ -595,7 +598,7 @@ await popup.waitForLoadState();
 ```javascript
 const [download] = await Promise.all([
   page.waitForEvent('download'),
-  page.click('button.download')
+  page.locator('button.download').click()
 ]);
 await download.saveAs(`./downloads/${download.suggestedFilename()}`);
 ```
