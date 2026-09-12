@@ -9,8 +9,17 @@ This skill can be installed in different locations (plugin system, manual instal
 Common installation paths:
 
 - Plugin system: `~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill`
+- Plugin cache (versioned install): `~/.claude/plugins/cache/playwright-skill/playwright-skill/<version>/skills/playwright-skill`
 - Manual global: `~/.claude/skills/playwright-skill`
 - Project-specific: `<project>/.claude/skills/playwright-skill`
+
+**Cache installs report the wrong base directory.** When this SKILL.md was loaded from a
+`plugins/cache/...` install, the harness's "Base directory for this skill" line points at the
+*plugin* root (`.../playwright-skill/<version>`), not the skill's own folder — `run.js` and
+`node_modules` are one level deeper, under `.../<version>/skills/playwright-skill/`. If
+`$SKILL_DIR/run.js` doesn't exist, check `$SKILL_DIR/skills/playwright-skill/run.js` before
+assuming Playwright isn't installed and reinstalling — a working install (with browsers already
+downloaded) is likely already sitting one directory down.
 
 # Playwright Browser Automation
 
