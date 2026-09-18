@@ -7,11 +7,11 @@ const { spawn } = require('node:child_process');
 const skillDir = __dirname;
 const nodeModules = path.join(skillDir, 'node_modules');
 
-function ensurePlaywright() {
+function ensureDependency(name) {
   try {
-    require.resolve('playwright', { paths: [skillDir] });
+    require.resolve(name, { paths: [skillDir] });
   } catch {
-    console.error('Playwright is not installed. Run `npm run setup` in the skill directory.');
+    console.error(`${name} is not installed. Run \`npm run setup\` in the skill directory.`);
     process.exit(1);
   }
 }
@@ -63,17 +63,26 @@ function run(args) {
   }
 }
 
-ensurePlaywright();
+ensureDependency('playwright');
 
 const args = process.argv.slice(2);
-if (args[0] === '-e' || args[0] === '--eval') {
+if (args[0] === '--detect-servers') {
+  const ports = args.slice(1).map(Number).filter(port => Number.isInteger(port));
+  require('./lib/helpers').detectDevServers(ports).then(servers => {
+    console.log(JSON.stringify(servers));
+  }, error => {
+    console.error(error.stack || error.message);
+    process.exit(1);
+  });
+} else if (args[0] === '-e' || args[0] === '--eval') {
+  ensureDependency('@playwright/test');
   const source = args.slice(1).join(' ');
   if (!source) {
     console.error('Usage: node run.js -e "await page.goto(\'https://example.com\')"');
     process.exit(1);
   }
   const helpersPath = JSON.stringify(path.join(skillDir, 'lib/helpers'));
-  const prefix = `const { chromium, firefox, webkit, devices } = require('playwright');\nconst helpers = require(${helpersPath});\n`;
+  const prefix = `const { chromium, firefox, webkit, devices } = require('playwright');\nconst { expect } = require('@playwright/test');\nconst helpers = require(${helpersPath});\n`;
   // ponytail: exit once the snippet settles so a snippet that leaves the browser open
   // cannot hang; the empty writes flush queued output first (pipe writes are async).
   const exit = "async () => { for (const s of [process.stdout, process.stderr]) await new Promise(r => s.write('', r)); process.exit(process.exitCode ?? 0); }";
@@ -92,5 +101,6 @@ if (args[0] === '-e' || args[0] === '--eval') {
 } else {
   console.error('Usage: node run.js <script.js> [args...]');
   console.error('   or: node run.js -e "await page.goto(\'https://example.com\')"');
+  console.error('   or: node run.js --detect-servers [port ...]');
   process.exit(1);
 }

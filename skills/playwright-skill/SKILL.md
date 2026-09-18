@@ -39,30 +39,40 @@ Common installation paths:
 1. For localhost work, detect running servers before writing a URL:
 
    ```bash
-   node -e "require('$SKILL_DIR/lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
+   node "$SKILL_DIR/run.js" --detect-servers
    ```
 
-   Use the only result automatically. Ask which URL to use when there are
-   multiple results. Ask for a URL or offer to start a server when none exist.
+   Extra arguments add custom ports to the default scan. Use the only result
+   automatically. Ask which URL to use when there are multiple results. Ask
+   for a URL or offer to start a server when none exist.
 2. Write reusable scripts to `$TMP_DIR/playwright-test-*.js` unless the user
    asks to save them in the project. Use `PW_SCRIPT_DIR` to preserve scripts.
+   Write CommonJS (`require`), not ES modules; the executor resolves
+   `playwright` through NODE_PATH, which `import` ignores.
 3. Use a visible browser by default. Use `headless: true` only when requested
    or when the environment has no display.
 4. Put the target URL in a constant or environment variable.
-5. Run scripts with `node "$SKILL_DIR/run.js" <script.js>`.
-6. Report actions, failures, and artifact paths. Do not claim success without
-   checking the resulting page.
+5. Run scripts with `node "$SKILL_DIR/run.js" <script.js>`. Long flows — a
+   visible browser, `SLOW_MO`, multi-viewport screenshots — can exceed the
+   shell tool's default timeout (120 s in Claude Code); request a larger
+   timeout on the call, up to 600000 ms, so the run is not killed with an
+   orphaned browser.
+6. Verify visually: open screenshot artifacts with the Read tool (it renders
+   PNGs) and check the page before reporting success — console output alone
+   misses rendering problems. Report actions, failures, and artifact paths.
 
 ## Setup
 
 Run once:
 
 ```bash
-cd "$SKILL_DIR" && npm run setup
+npm --prefix "$SKILL_DIR" run setup
 ```
 
-This installs Playwright and Chromium. Use `cd "$SKILL_DIR" && npm run
-install-all-browsers` when Firefox or WebKit is required.
+This installs Playwright and Chromium. Use `npm --prefix "$SKILL_DIR" run
+install-all-browsers` when Firefox or WebKit is required. Prefer `npm
+--prefix` over `cd ... && npm ...` so the command still starts with `npm`
+and matches the `Bash(npm:*)` entry in allowed-tools.
 
 ## Minimal example
 
@@ -99,8 +109,9 @@ For short one-off tasks, use inline execution:
 node "$SKILL_DIR/run.js" -e "const browser = await chromium.launch({headless: false}); try { const page = await browser.newPage(); await page.goto('https://example.com'); console.log(await page.title()); } finally { await browser.close(); }"
 ```
 
-The `-e` process exits as soon as the snippet settles, so close the browser
-inside the snippet.
+Inline snippets run with `chromium`, `firefox`, `webkit`, `devices`,
+`expect`, and `helpers` already in scope. The `-e` process exits as soon as
+the snippet settles, so close the browser inside the snippet.
 
 ## Current Playwright patterns
 
@@ -111,8 +122,10 @@ Prefer locators that describe what a user sees, in this order:
 3. `page.getByText()` for visible content
 4. `page.getByTestId()` when the application provides a test contract
 
-Actions auto-wait for actionability. Use web-first assertions or a locator's
-`waitFor()` instead of `waitForSelector()`, fixed sleeps, or `networkidle`.
+Actions auto-wait for actionability. Use web-first assertions from
+`@playwright/test` (`const { expect } = require('@playwright/test')`) or a
+locator's `waitFor()` instead of `waitForSelector()`, fixed sleeps, or
+`networkidle`.
 
 ```javascript
 await page.getByLabel('Email').fill('test@example.com');
@@ -191,11 +204,31 @@ const browser = await helpers.launchBrowser('chromium');
 const context = await helpers.createContext(browser);
 const page = await context.newPage();
 await helpers.handleCookieBanner(page);
+await helpers.fillLabeledField(page, 'Email', 'user@example.com');
 await helpers.takeScreenshot(page, 'result');
 ```
 
-Available helpers are `detectDevServers`, `getExtraHeadersFromEnv`,
-`launchBrowser`, `createContext`, `handleCookieBanner`, and `takeScreenshot`.
+Available helpers are `allScopes`, `clickTextAnywhere`, `createContext`,
+`detectDevServers`, `fillLabeledField`, `getExtraHeadersFromEnv`,
+`handleCookieBanner`, `launchBrowser`, `sleep`, `takeScreenshot`, and
+`waitTextAnywhere`.
+
+- `allScopes(pageOrContext)`: every page and iframe as `{ page, frame, label }`.
+- `clickTextAnywhere(pageOrContext, text, { exact, timeout, attempts, gapMs })`:
+  clicks the first visible text match across every page and iframe and
+  returns `false` when nothing matched. Pass `attempts` to keep retrying
+  while a slow page renders. Use it when the frame is unknown; prefer a
+  direct locator when the frame is known.
+- `fillLabeledField(pageOrContext, labelText, value, { exact })`: fills the
+  text control associated with a visible label — native label association
+  first, then same-cell or next-in-document-order heuristics for
+  unassociated markup. Returns `false` when nothing was filled.
+- `sleep(ms)`: promise delay for pacing and backoff. Prefer locator waits
+  over sleeps for readiness.
+- `waitTextAnywhere(pageOrContext, text, { timeout, pollMs, exact })`: waits
+  until the text is visible in any page or iframe and returns `false` on
+  timeout. Use it to verify outcomes after actions.
+
 Use Playwright locators and assertions directly for actions, waits, extraction,
 authentication, tables, and retries.
 
@@ -206,6 +239,10 @@ authentication, tables, and retries.
 - `PW_EXECUTABLE_PATH`: explicit browser executable path.
 - `PW_HEADLESS`: `true` or `false`; visible mode is the default.
 - `SLOW_MO`: action delay in milliseconds.
+- `PW_LOCALE`: context locale such as `en-US` or `zh-CN`; defaults to the
+  system locale.
+- `PW_TIMEZONE`: context timezone such as `Asia/Shanghai`; defaults to the
+  system timezone.
 - `PW_HEADER_NAME` and `PW_HEADER_VALUE`: one extra HTTP header.
 - `PW_EXTRA_HEADERS`: JSON object of extra HTTP headers.
 - `PW_SCRIPT_DIR`: directory for preserving file-based scripts.

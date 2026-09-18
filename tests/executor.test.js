@@ -1,9 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawnSync, execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+
+const execFileAsync = promisify(execFile);
 
 const skillDir = path.resolve(__dirname, '../skills/playwright-skill');
 
@@ -88,6 +92,38 @@ test('scripts keep the caller working directory', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout.trim(), fs.realpathSync(directory));
   fs.rmSync(directory, { recursive: true, force: true });
+});
+
+test('inline execution provides expect from @playwright/test', () => {
+  const result = spawnSync(process.execPath, [path.join(skillDir, 'run.js'), '-e', 'console.log(typeof expect)'], {
+    encoding: 'utf8',
+    timeout: 15000,
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /function/);
+});
+
+test('--detect-servers reports listening servers as JSON', async () => {
+  const server = http.createServer((request, response) => {
+    response.writeHead(200);
+    response.end();
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    // Async execution keeps this process's event loop alive so the server can
+    // accept while the child scans; spawnSync would starve the listener.
+    const { stdout } = await execFileAsync(process.execPath, [path.join(skillDir, 'run.js'), '--detect-servers', String(port)], {
+      encoding: 'utf8',
+      timeout: 15000,
+    });
+
+    assert.ok(JSON.parse(stdout).includes(`http://localhost:${port}`), stdout);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
 });
 
 test('PW_SCRIPT_DIR preserves scripts and avoids collisions', () => {

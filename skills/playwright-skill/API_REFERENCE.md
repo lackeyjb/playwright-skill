@@ -2,6 +2,19 @@
 
 This document contains the comprehensive Playwright API reference and advanced patterns. For quick-start execution patterns, see [SKILL.md](SKILL.md).
 
+The skill installs both `playwright` and `@playwright/test`, so standalone
+scripts can use web-first assertions directly:
+
+```javascript
+const { expect } = require('@playwright/test');
+
+await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+```
+
+Test-runner patterns (`test()`, `playwright.config.ts`, `npx playwright test`)
+apply when you are contributing tests to a project that runs Playwright's
+runner; they are not needed for scripts executed through this skill.
+
 ## Table of Contents
 
 - [Installation & Setup](#installation--setup)
