@@ -25,16 +25,9 @@ Claude 会根据你的浏览器自动化需求自主决定何时使用本技能�
 
 ## 为什么需要这个技能？
 
-当智能体需要编写真正的 Playwright 程序时使用本技能：循环、断言、多上下文、
-网络拦截、截图、录像，或者你想保留下来反复运行的脚本。它还提供开发服务器检测
-以及一小组职责单一的辅助函数。
+当智能体需要编写真正的 Playwright 程序时使用本技能：循环、断言、多上下文、网络拦截、截图、录像，或者你想保留下来反复运行的脚本。它还提供开发服务器检测以及一小组职责单一的辅助函数。
 
-如果只是直接的交互式浏览，请优先使用微软官方的
-[`@playwright/cli`](https://github.com/microsoft/playwright-cli)，并用
-`playwright-cli install --skills` 安装其智能体技能。如果需要基于工具的浏览器
-控制以及可访问性快照，请使用
-[`playwright-mcp`](https://github.com/microsoft/playwright-mcp)。当自动化脚本
-本身就是有价值的产出时，本项目是那个“以代码为先”的选择。
+如果只是直接的交互式浏览，请优先使用微软官方的 [`@playwright/cli`](https://github.com/microsoft/playwright-cli)，并用 `playwright-cli install --skills` 安装其智能体技能。如果需要基于工具的浏览器控制以及可访问性快照，请使用 [`playwright-mcp`](https://github.com/microsoft/playwright-mcp)。当自动化脚本本身就是有价值的产出时，本项目是那个“以代码为先”的选择。
 
 ### 理解目录结构
 
@@ -102,10 +95,7 @@ npm run setup
 
 ### 方式三：其他智能体的安装方式
 
-Agent Skills 已得到 Claude Code、Cursor、GitHub Copilot、Codex、
-Gemini CLI、OpenCode 等客户端支持。请按照各客户端文档中的技能路径安装包含
-`SKILL.md` 的目录。若客户端没有安装工具，把 `skills/playwright-skill/` 复制到
-其文档所述的技能目录，并在该目录运行 `npm run setup`。
+Agent Skills 已得到 Claude Code、Cursor、GitHub Copilot、Codex、Gemini CLI、OpenCode 等客户端支持。请按照各客户端文档中的技能路径安装包含 `SKILL.md` 的目录。若客户端没有安装工具，把 `skills/playwright-skill/` 复制到其文档所述的技能目录，并在该目录运行 `npm run setup`。
 
 ### 方式四：下载发行版
 
@@ -127,8 +117,7 @@ Gemini CLI、OpenCode 等客户端支持。请按照各客户端文档中的技�
 
 ## 快速开始
 
-安装完成后，直接让你的智能体测试或自动化某个浏览器任务。它会编写自定义
-Playwright 代码、执行代码，并连同截图与控制台输出返回结果。
+安装完成后，直接让你的智能体测试或自动化某个浏览器任务。它会编写自定义 Playwright 代码、执行代码，并连同截图与控制台输出返回结果。
 
 ## 使用示例
 
@@ -175,8 +164,8 @@ Playwright 代码、执行代码，并连同截图与控制台输出返回结果
 
 默认设置：
 
-- **Headless：** `false`（除非明确要求，否则浏览器窗口可见）
-- **Slow Motion：** 默认 `0ms`；需要时设置 `SLOW_MO`
+- **Headless:** `false`（除非明确要求，否则浏览器窗口可见）
+- **Slow Motion:** 默认 `0ms`；需要时设置 `SLOW_MO`
 - **截图：** 辅助函数截图使用系统临时目录；设置 `PW_ARTIFACT_DIR` 可改到其他位置
 
 ## 项目结构
@@ -201,8 +190,7 @@ playwright-skill/
 
 ## 进阶用法
 
-需要关于选择器、网络拦截、身份认证、视觉回归测试、移动端模拟、性能测试与
-调试的完整文档时，Claude 会自动加载 `API_REFERENCE.md`。
+需要关于选择器、网络拦截、身份认证、视觉回归测试、移动端模拟、性能测试与调试的完整文档时，Claude 会自动加载 `API_REFERENCE.md`。
 
 ## 依赖
 
