@@ -1,5 +1,7 @@
 # Playwright Skill
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 **General-purpose Playwright automation for coding agents**
 
 An [Agent Skill](https://agentskills.io) that enables coding agents to write and execute Playwright automation on the fly, from simple page tests to complex multi-step flows. It is also packaged as a [Claude Code Plugin](https://code.claude.com/docs/en/plugins) for convenient installation.
